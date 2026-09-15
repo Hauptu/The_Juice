@@ -1,0 +1,1007 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Bixia / supplied palette */
+  --orange:#ee801c;
+  --blue:#004b6e;
+  --wind:#252b2a;
+  --green:#285f2e;
+  --yellow:#e5ac00;
+
+  /* Light tints derived from the supplied palette */
+  --orange-08:rgba(238,128,28,.08);
+  --blue-06:rgba(0,75,110,.06);
+  --wind-08:rgba(37,43,42,.08);
+  --green-08:rgba(40,95,46,.08);
+  --yellow-10:rgba(229,172,0,.10);
+
+  --bg:#f5f6f4;
+  --panel-a:#ffffff;
+  --panel-b:#fbfcfb;
+  --card-a:#ffffff;
+  --card-b:#f8faf9;
+  --line:#d9dfdc;
+  --line-soft:#e7ebe9;
+  --line-strong:#b9c4bf;
+  --text:#18201e;
+  --text-dim:#56615d;
+  --text-faint:#7f8a85;
+  --err:#a83a25;
+  --warn:#b66a00;
+
+  --font-display:'Space Grotesk','Segoe UI',Arial,sans-serif;
+  --font-body:'Inter','Segoe UI',Arial,sans-serif;
+
+  --r-panel:12px;
+  --r-card:8px;
+  --r-chip:999px;
+  --r-chart:6px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font-body)}
+body{
+  font-variant-numeric:tabular-nums;
+  background-color:var(--bg);
+  background-image:
+    linear-gradient(rgba(0,75,110,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,75,110,.025) 1px,transparent 1px);
+  background-size:40px 40px;
+}
+#app{
+  width:100vw;height:100vh;display:grid;
+  grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;
+  gap:12px;padding:12px;
+}
+
+/* ---------- panel layout ---------- */
+/* Visual order: 01 Elpriser · 02 Balans · 03 Tid · 04 Produktion & förbrukning */
+#market{order:1}
+#balance{order:2}
+#physical{order:3}
+#system{order:4}
+
+/* ---------- panel shell ---------- */
+.panel{
+  min-width:0;min-height:0;position:relative;overflow:hidden;isolation:isolate;
+  display:flex;flex-direction:column;
+  background:linear-gradient(165deg,var(--panel-a) 0%,var(--panel-b)100%);
+  border:1px solid var(--line);
+  border-radius:var(--r-panel);
+  padding:18px 18px 29px;
+  box-shadow:0 8px 24px -22px rgba(37,43,42,.38);
+}
+.panel:before{content:"";position:absolute;left:0;right:0;top:0;height:3px;z-index:1;opacity:1}
+#market:before{background:var(--orange)}
+#balance:before{background:var(--green)}
+#physical:before{background:var(--wind)}
+#system:before{background:var(--blue)}
+
+.head{flex:0 0 auto;display:flex;justify-content:space-between;align-items:flex-start;gap:14px;border-bottom:1px solid var(--line-soft);padding-bottom:12px}
+h2{display:block;margin:0;font-family:var(--font-display);font-size:16px;font-weight:700;letter-spacing:.025em;text-transform:uppercase;color:var(--blue)}
+#market h2{color:var(--orange)}
+#balance h2{color:var(--green)}
+#physical h2{color:var(--wind)}
+#system h2{color:var(--blue)}
+.panel-index{color:var(--text-faint);font-weight:600;margin-right:9px;letter-spacing:0}
+.sub{font-size:11px;color:var(--text-dim);margin-top:6px;letter-spacing:.005em}
+
+.content{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:11px;padding-top:13px}
+.flex-fill{flex:1 1 auto;min-height:0}
+
+/* ---------- status badges ---------- */
+.badge{
+  font-family:var(--font-body);font-size:10px;font-weight:800;letter-spacing:.045em;
+  display:inline-flex;align-items:center;gap:7px;flex:0 0 auto;
+  color:var(--orange);background:var(--orange-08);
+  border:1px solid rgba(238,128,28,.30);
+  border-radius:var(--r-chip);
+  padding:6px 11px 6px 9px;white-space:nowrap;
+}
+.badge:before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex:0 0 auto}
+.badge.loading{color:var(--text-dim);background:var(--wind-08);border-color:rgba(37,43,42,.18)}
+.badge.ok{color:var(--green);background:var(--green-08);border-color:rgba(40,95,46,.28)}
+.badge.ok:before{animation:pulseDot 2.2s ease-in-out infinite}
+.badge.err{color:var(--err);background:rgba(168,58,37,.08);border-color:rgba(168,58,37,.25)}
+.badge.stale{color:var(--warn);background:var(--yellow-10);border-color:rgba(229,172,0,.34)}
+@keyframes pulseDot{0%,100%{box-shadow:0 0 0 0 rgba(40,95,46,.42)}50%{box-shadow:0 0 0 4px rgba(40,95,46,0)}}
+
+/* ---------- generic card / chart shell ---------- */
+.card{
+  display:flex;flex-direction:column;gap:10px;
+  background:linear-gradient(180deg,var(--card-a) 0%,var(--card-b) 100%);
+  border:1px solid var(--line);border-radius:var(--r-card);
+  padding:12px 14px;
+  box-shadow:0 3px 14px -16px rgba(37,43,42,.45);
+}
+.chart{
+  position:relative;
+  flex:1 1 auto;min-height:0;
+  background:var(--card-b);
+  border:1px solid var(--line-soft);border-radius:var(--r-chart);padding:9px;
+}
+.chart svg{width:100%;height:100%;display:block}
+.sectiontitle{font-size:10px;color:var(--blue);text-transform:uppercase;letter-spacing:.06em;font-weight:800;margin:0}
+.muted{color:var(--text-faint)}
+.tiny{font-size:8px}
+.small{font-size:10px}
+.right{text-align:right}
+
+/* ---------- ruta 1 · price areas ---------- */
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;flex:0 0 auto}
+#areaCards .card{position:relative;padding:12px 13px 11px;overflow:hidden;gap:3px}
+#areaCards .card:before{content:"";position:absolute;left:0;right:0;top:0;height:2px;opacity:.95}
+#areaCards .price.down{color:var(--orange)}
+#areaCards .price.up{color:var(--text)}
+
+#physical .content{
+  background-image:linear-gradient(180deg,rgba(37,43,42,.08) 0%,rgba(37,43,42,.38) 70%,rgba(37,43,42,.68) 100%),url("energy-scene-bg-white.png");
+}
+#physical .head{border-bottom-color:rgba(37,43,42,.16)}
+
+.label{font-size:10px;font-weight:700;letter-spacing:.07em;color:var(--text-dim);text-transform:uppercase}
+.price{font-family:var(--font-display);font-size:25px;font-weight:600;margin-top:1px;color:var(--text)}
+.unit{font-size:12px;color:var(--text-dim);font-weight:500;margin-left:4px;font-family:var(--font-body)}
+.time{font-size:9px;color:var(--text-faint);margin-top:1px}
+.price.up{color:var(--text)}
+.price.down{color:var(--warn)}
+.price.neutral{color:var(--text)}
+.legend{display:flex;gap:15px;flex-wrap:wrap;font-size:10px;color:var(--text-dim);margin-top:2px;font-weight:600;letter-spacing:.02em}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.axis{font-family:var(--font-body);font-size:9px;fill:#69756f;font-weight:500}
+.price-chart-wrap{position:relative;height:100%}
+.price-hover{position:absolute;z-index:20;display:none;min-width:158px;padding:9px 11px;border:1px solid rgba(0,0,0,.06);border-radius:8px;background:rgba(17,22,28,.96);box-shadow:0 14px 30px rgba(20,26,33,.28);font-size:10px;line-height:1.5;color:#eef2f6;pointer-events:none}
+.price-hover .ph-time{font-family:var(--font-display);font-weight:600;font-size:12px;margin-bottom:5px;color:#eef2f6}
+.price-hover .ph-row{display:flex;justify-content:space-between;gap:16px}
+.price-hover .ph-val{font-weight:700}
+.price-hover-line{stroke:var(--orange);stroke-width:1.2;stroke-dasharray:3 3;opacity:.95;pointer-events:none}
+
+/* ---------- ruta 2 · production mix ---------- */
+.hero{display:grid;grid-template-columns:1.2fr 1.2fr 1fr;gap:10px;flex:0 0 auto}
+.hero-two{grid-template-columns:1fr 1fr}
+.hero .v{font-family:var(--font-display);font-size:31px;font-weight:600;color:var(--text);line-height:1.05}
+.hero .u{font-size:11px;color:var(--text-dim);margin-top:5px;letter-spacing:.015em}
+#balance .hero>div{position:relative;padding-left:11px}
+#balance .hero>div:before{content:"";position:absolute;left:0;top:5px;bottom:6px;width:2px;border-radius:2px;opacity:.85}
+
+.mix-headline{display:flex;align-items:center;justify-content:space-between;gap:10px;flex:0 0 auto}
+.data-badge{font-size:9px;letter-spacing:.025em;color:var(--blue);background:var(--blue-06);border:1px solid rgba(0,75,110,.16);border-radius:var(--r-chip);padding:5px 10px;white-space:nowrap;font-weight:800}
+.data-badge.actual{color:var(--green);border-color:rgba(40,95,46,.25);background:var(--green-08)}
+.mix-visual{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:46% 54%;align-items:center;gap:12px}
+.mix-visual-large{grid-template-columns:50% 50%;gap:16px}
+.mix-donut{width:min(190px,100%);aspect-ratio:1;border-radius:50%;margin:auto;position:relative;background:conic-gradient(var(--line) 0 100%);box-shadow:0 0 0 1px rgba(37,43,42,.06),0 14px 30px -14px rgba(37,43,42,.20)}
+.mix-donut:after{content:"";position:absolute;inset:25%;border-radius:50%;background:var(--panel-a);border:2px solid #fff}
+.mix-donut-large{width:min(290px,100%)}
+.mix-center{position:absolute;z-index:2;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
+.mix-center b{font-family:var(--font-display);font-size:22px;font-weight:600;color:var(--text)}
+.mix-center span{font-size:9px;color:var(--text-dim);margin-top:7px;letter-spacing:.07em;text-transform:uppercase}
+.mix-legend{display:flex;flex-direction:column;gap:9px}
+.mix-legend-large{gap:10px}
+.mix-item{display:grid;grid-template-columns:11px 1fr auto;column-gap:10px;align-items:center;padding:10px 13px;border:1px solid var(--line-soft);border-radius:8px;background:#fff;min-height:50px}
+.mix-item .mix-dot{width:11px;height:11px}
+.mix-dot{width:9px;height:9px;border-radius:50%}
+.mix-name{font-size:12px;font-weight:600;color:var(--text);line-height:1.15}
+.mix-pct{font-family:var(--font-display);font-size:16px;font-weight:600;color:var(--text);text-align:right}
+.mix-mw{grid-column:2/4;font-size:9px;color:var(--text-faint);margin-top:2px;line-height:1.1}
+
+/* ---------- ruta 3 · local clock ---------- */
+.clock-panel-content{align-items:center;justify-content:center}
+#physical{background-color:var(--bg)}
+#physical .content{
+  position:relative;isolation:isolate;
+  background-image:linear-gradient(180deg,rgba(10,14,18,.12) 0%,rgba(10,14,18,.32) 65%,rgba(10,14,18,.56) 100%),url("energy-scene-bg-white.png");
+  background-size:cover;background-position:center;background-repeat:no-repeat;
+  border-radius:var(--r-card);overflow:hidden;padding-top:0;
+  border:1px solid var(--line-strong);
+}
+#physical .clock-display{position:relative;z-index:2;text-shadow:0 6px 30px rgba(0,0,0,.85)}
+#physical .clock-date,#physical .clock-time{color:#f4f7f6}
+.clock-display{text-align:center}
+.clock-date{font-family:var(--font-display);font-size:19px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--text-dim)}
+.clock-time{font-family:var(--font-display);font-size:76px;font-weight:600;line-height:1.05;letter-spacing:.005em;color:var(--text);margin-top:12px}
+
+/* ---------- ruta 4 · frequency ---------- */
+.freq-reading{display:flex;align-items:baseline;gap:8px}
+.freq-unit{font-family:var(--font-display);font-size:16px;font-weight:600;color:var(--text-dim)}
+.freq-zone-axis{font-family:var(--font-body);font-size:10px;fill:#69756f;font-weight:500}
+.freq-zone-axis-opt{font-family:var(--font-body);font-size:10px;fill:#69756f;font-weight:500}
+.freq-boundary{stroke:var(--orange);stroke-width:1.15;stroke-dasharray:6 4;opacity:.92}
+.freq-optimum{stroke:var(--green);stroke-width:2;opacity:.95}
+.freq-trace{stroke:var(--wind);stroke-width:2.5}
+.freq-x-axis{font-family:var(--font-body);font-size:10px;fill:#69756f;font-weight:500}
+.freq-hover-line{stroke:var(--blue);stroke-width:1.2;stroke-dasharray:4 3;opacity:.72}
+.freq-hover-dot{fill:var(--orange);stroke:#fff;stroke-width:2}
+.freq-tooltip{position:absolute;z-index:10;pointer-events:none;display:none;min-width:120px;padding:8px 10px;border:1px solid rgba(0,0,0,.06);border-radius:8px;background:rgba(17,22,28,.96);box-shadow:0 12px 26px rgba(20,26,33,.26);font-size:11px;line-height:1.3;color:#eef2f6;white-space:nowrap}
+.freq-tooltip .tt-time{color:#aab4c0;font-size:10px}
+.freq-tooltip .tt-value{font-family:var(--font-display);font-size:15px;font-weight:600;margin-top:3px;color:#5eead4}
+
+.foot{position:absolute;left:18px;right:18px;bottom:10px;display:flex;justify-content:space-between;color:var(--text-faint);font-size:9px;letter-spacing:.01em;z-index:1}
+
+/* ---------- unified dashboard chrome ---------- */
+.panel:before{display:none}
+
+h2,
+#market h2,
+#balance h2,
+#physical h2,
+#system h2{
+  color:var(--wind);
+}
+
+.sectiontitle{
+  color:var(--wind);
+}
+
+.panel-index{
+  color:var(--text-faint);
+}
+
+#market .head,
+#balance .head,
+#physical .head,
+#system .head{
+  border-bottom-color:var(--line-soft);
+}
+
+/* Status is semantic, not panel-specific */
+.badge{
+  color:var(--green);
+  background:var(--green-08);
+  border-color:rgba(40,95,46,.28);
+}
+.badge.loading{
+  color:var(--text-dim);
+  background:var(--wind-08);
+  border-color:rgba(37,43,42,.18);
+}
+.badge.ok{
+  color:var(--green);
+  background:var(--green-08);
+  border-color:rgba(40,95,46,.28);
+}
+.badge.stale{
+  color:var(--yellow);
+  background:var(--yellow-10);
+  border-color:rgba(229,172,0,.34);
+}
+.badge.err{
+  color:var(--orange);
+  background:var(--orange-08);
+  border-color:rgba(238,128,28,.30);
+}
+
+/* Neutral cards: no panel gets its own background identity */
+#areaCards .card,
+#areaCards .card:nth-child(1),
+#areaCards .card:nth-child(2),
+#areaCards .card:nth-child(3),
+#areaCards .card:nth-child(4){
+  background:var(--card-a);
+}
+
+/* Area identity is carried by the data itself, not by the panel */
+#areaCards .card:nth-child(1),
+#areaCards .card:nth-child(2),
+#areaCards .card:nth-child(3),
+#areaCards .card:nth-child(4){
+  border-color:var(--line);
+}
+#areaCards .card:nth-child(1):before{background:var(--orange)}
+#areaCards .card:nth-child(2):before{background:#007a57}
+#areaCards .card:nth-child(3):before{background:#4f9f55}
+#areaCards .card:nth-child(4):before{background:var(--yellow)}
+#areaCards .card:nth-child(1) .label{color:var(--text-dim)}
+#areaCards .card:nth-child(2) .label{color:var(--text-dim)}
+#areaCards .card:nth-child(3) .label{color:var(--text-dim)}
+#areaCards .card:nth-child(4) .label{color:var(--text-dim)}
+
+/* KPI colors are data semantics, not panel colors */
+#balance .hero>div:nth-child(1) .v,
+#balance .hero>div:nth-child(2) .v{
+  color:var(--text);
+}
+#balance .hero>div:nth-child(1):before{background:var(--green)}
+#balance .hero>div:nth-child(2):before{background:var(--orange)}
+
+
+/* Brighter production-mix presentation using only the supplied palette */
+#system .mix-card{
+  background:linear-gradient(180deg,#ffffff 0%,#fbfcfa 100%);
+}
+#system .mix-donut{
+  box-shadow:0 0 0 1px rgba(37,43,42,.05),0 16px 34px -16px rgba(37,43,42,.22);
+}
+#system .mix-center b{color:var(--wind)}
+/* Keep the clock neutral; its photo may remain visually distinctive. */
+#physical .head{border-bottom-color:var(--line-soft)}
+
+@media(max-width:1100px){
+  #app{gap:7px;padding:7px}
+  .panel{padding:13px 13px 24px}
+  .price{font-size:20px}
+  .hero .v{font-size:23px}
+  .grid4{gap:5px}
+  .card{padding:9px}
+  .clock-time{font-size:52px}
+  .clock-date{font-size:15px}
+  .mix-donut-large{width:min(210px,100%)}
+}
+
+
+.mfrr-content{gap:8px}.mfrr-kpi-head{display:flex;justify-content:flex-end;align-items:center;margin:0 2px -1px}.mfrr-kpi-note{display:inline-flex;align-items:center;gap:7px;padding:4px 9px;border:1px solid rgba(79,159,85,.32);border-radius:999px;background:rgba(244,250,245,.95);color:#276a35;font-size:8.5px;font-weight:800;letter-spacing:.055em;text-transform:uppercase}.mfrr-kpi-note strong{font-size:9.5px}.mfrr-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.mfrr-card{background:rgba(255,255,255,.72);border:1px solid var(--line);border-radius:8px;padding:12px 13px 11px;min-width:0;height:76px;overflow:hidden;transition:background .25s,border-color .25s,box-shadow .25s}.mfrr-card.active{background:#EEF3F6;border-color:#6F8799;box-shadow:0 0 0 1px rgba(111,135,153,.10),0 5px 14px -10px rgba(63,83,98,.24)}.mfrr-card.stale{border-color:rgba(202,138,4,.55);background:rgba(255,252,240,.82)}.mfrr-area{font-family:var(--font-body);font-size:10px;font-weight:700;letter-spacing:.07em;color:var(--text-dim);margin-bottom:5px}.mfrr-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px}.mfrr-label{display:block;font-family:var(--font-body);font-size:10px;font-weight:700;letter-spacing:.07em;margin-bottom:1px}.mfrr-label.up{color:#ee801c}.mfrr-label.down{color:#4f9f55}.mfrr-row>div{min-width:0}.mfrr-row b{display:block;font-family:var(--font-display);font-size:20px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.035em;white-space:nowrap}.mfrr-row small{display:block;font-family:var(--font-body);font-size:9px;line-height:1.05;color:var(--text-faint);white-space:nowrap;margin:2px 0 0}.mfrr-chart-head{display:flex;align-items:center;gap:10px}.mfrr-chart-card{position:relative;gap:8px;padding:10px 12px 11px}.mfrr-rotation{display:flex;gap:3px;height:3px;margin:-1px 0 5px}.mfrr-rotation span{flex:1;background:var(--line);border-radius:99px;transition:background .2s}.mfrr-rotation span.active{background:#252b2a}.mfrr-legend{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin:0 0 2px;color:var(--text-faint);font-size:10px;font-weight:700}.mfrr-legend span{display:inline-flex;align-items:center;gap:5px}.legend-sample{display:inline-block;width:18px;height:0;border-top:2px solid currentColor}.legend-sample.up{color:#ee801c}.legend-sample.down{color:#4f9f55}.mfrr-line{fill:none;stroke-width:2.4;vector-effect:non-scaling-stroke;opacity:.95}.mfrr-line.up{stroke:#ee801c}.mfrr-line.down{stroke:#4f9f55}.xtick{stroke:var(--line);stroke-width:1}.nowline{stroke:#252b2a;stroke-width:1;stroke-dasharray:3 3;opacity:.35}.gridline{stroke:#dfe5e2;stroke-width:.7}.mfrr-hover-line{stroke:#252b2a;stroke-width:1.2;stroke-dasharray:4 3;opacity:.55;pointer-events:none}
+.mfrr-hover-dot.up{fill:#ee801c;stroke:#fff;stroke-width:2}
+.mfrr-hover-dot.down{fill:#4f9f55;stroke:#fff;stroke-width:2}
+.mfrr-tooltip{position:absolute;z-index:20;display:none;min-width:150px;padding:9px 11px;border:1px solid rgba(0,0,0,.06);border-radius:8px;background:rgba(17,22,28,.96);box-shadow:0 14px 30px rgba(20,26,33,.28);font-size:10px;line-height:1.5;color:#eef2f6;pointer-events:none}
+.mfrr-tooltip .mtt-time{font-family:var(--font-display);font-weight:600;font-size:12px;margin-bottom:5px;color:#eef2f6}
+.mfrr-tooltip .mtt-row{display:flex;justify-content:space-between;gap:18px}
+.mfrr-tooltip .mtt-label{font-weight:700}
+.mfrr-tooltip .mtt-label.up{color:#ee801c}
+.mfrr-tooltip .mtt-label.down{color:#4f9f55}
+.mfrr-tooltip .mtt-val{font-weight:700}
+</style>
+</head>
+<body>
+<div id="app">
+<section class="panel" id="market">
+  <div class="head"><div><h2><span class="panel-index">01</span>Day-ahead</h2><div class="sub">all publicerad day-ahead · SEK/MWh</div></div><div class="badge" id="marketStatus">Hämtar…</div></div>
+  <div class="content">
+    <div class="grid4" id="areaCards"></div>
+    <div class="card flex-fill">
+      <div class="sectiontitle" id="priceWindowTitle">Day-ahead · rullande fönster · SE1–SE4</div>
+      <div class="chart" id="priceChart"></div>
+    </div>
+  </div>
+  <div class="foot"><span>Elprisetjustnu.se API · publik</span><span id="marketUpdated">—</span></div>
+</section>
+
+<section class="panel" id="system">
+  <div class="head"><div><h2><span class="panel-index">04</span>mFRR - EAM</h2><div class="sub">Energiaktivering · upp &amp; ned</div></div><div class="badge" id="systemStatus">Hämtar…</div></div>
+  <div class="content mfrr-content">
+    <div class="mfrr-kpi-head"><div class="mfrr-kpi-note">SENASTE UTFALL · <strong id="mfrrKpiOutcomeTime">—</strong></div></div>
+    <div class="mfrr-grid">
+      <div class="mfrr-card"><div class="mfrr-area">SE1</div><div class="mfrr-row"><div><span class="mfrr-label up">UPP</span><b id="mfrr-SE1-up">—</b><small> EUR/MWh</small></div><div><span class="mfrr-label down">NED</span><b id="mfrr-SE1-down">—</b><small> EUR/MWh</small></div></div></div>
+      <div class="mfrr-card"><div class="mfrr-area">SE2</div><div class="mfrr-row"><div><span class="mfrr-label up">UPP</span><b id="mfrr-SE2-up">—</b><small> EUR/MWh</small></div><div><span class="mfrr-label down">NED</span><b id="mfrr-SE2-down">—</b><small> EUR/MWh</small></div></div></div>
+      <div class="mfrr-card"><div class="mfrr-area">SE3</div><div class="mfrr-row"><div><span class="mfrr-label up">UPP</span><b id="mfrr-SE3-up">—</b><small> EUR/MWh</small></div><div><span class="mfrr-label down">NED</span><b id="mfrr-SE3-down">—</b><small> EUR/MWh</small></div></div></div>
+      <div class="mfrr-card"><div class="mfrr-area">SE4</div><div class="mfrr-row"><div><span class="mfrr-label up">UPP</span><b id="mfrr-SE4-up">—</b><small> EUR/MWh</small></div><div><span class="mfrr-label down">NED</span><b id="mfrr-SE4-down">—</b><small> EUR/MWh</small></div></div></div>
+    </div>
+    <div class="card flex-fill mfrr-chart-card"><div class="mix-headline"><div class="mfrr-chart-head"><div class="sectiontitle">mFRR · senaste dygnet</div></div></div><div class="mfrr-rotation" id="mfrrRotation"><span></span><span></span><span></span><span></span></div><div class="mfrr-legend"><span><i class="legend-sample up"></i> Upp</span><span><i class="legend-sample down"></i> Ned</span></div><div class="chart" id="mfrrChart"></div></div>
+  </div>
+  <div class="foot"><span>ENTSO-E · mFRR EAM · A84</span><span id="systemUpdated">—</span></div>
+</section>
+
+<section class="panel" id="physical">
+  <div class="head"><div><h2><span class="panel-index">03</span>Tid</h2><div class="sub"> </div></div><div class="badge ok">LIVE</div></div>
+  <div class="content clock-panel-content">
+    <div class="clock-display"><div class="clock-date" id="clockDate">—</div><div class="clock-time" id="clockMain">—</div></div>
+  </div>
+  <div class="foot"><span>Lokal systemtid</span><span>Uppdateras varje sekund</span></div>
+</section>
+
+<section class="panel" id="balance">
+  <div class="head"><div><h2><span class="panel-index">02</span>Systemfrekvens</h2><div class="sub">Systemfrekvens · senaste 30 min</div></div><div class="badge" id="freqStatus">Hämtar…</div></div>
+  <div class="content">
+    <div class="hero hero-two"><div><div class="freq-reading"><div class="v" id="freq">—</div><div class="freq-unit">Hz</div></div></div><div><div class="v" id="freqDev">—</div><div class="u">Hz avvikelse</div></div></div>
+    <div class="card freq-main-card flex-fill">
+      <div class="mix-headline"><div class="sectiontitle">Frekvens · senaste 30 min</div><div class="data-badge" id="freqMeasureBadge">SENASTE MÄTNING · —</div></div>
+      <div class="chart" id="freqChart"></div>
+    </div>
+  </div>
+  <div class="foot"><span>Statnett driftsdata · publikt REST-API</span><span id="freqUpdated">—</span></div>
+</section>
+</div>
+<script>
+
+
+const $=id=>document.getElementById(id), A=['SE1','SE2','SE3','SE4'];
+const state={prices:{},systemHistory:[],freq:[],sync:{market:0,system:0,freq:0},marketLastSuccess:0};
+const SYNC_MAX={market:1200000,system:1200000,freq:20000};
+const attempted={market:false,system:false,freq:false};
+let systemFailCount=0,systemLastAttempt=0;
+let systemBusy=false,freqBusy=false;
+const fmt=(n,d=1)=>Number.isFinite(n)?n.toLocaleString('sv-SE',{minimumFractionDigits:d,maximumFractionDigits:d}):'—';
+const fmt0=n=>Number.isFinite(n)?Math.round(n).toLocaleString('sv-SE'):'—';
+const time=s=>{const d=new Date(s);return isNaN(d)?'—':d.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'})};
+const timeSec=s=>{const d=new Date(s);return isNaN(d)?'—':d.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit',second:'2-digit'})};
+function status(id,text,kind='ok',title=''){const e=$(id);e.textContent=text;e.className='badge '+kind;e.title=title}
+function stamp(id,d,label='Synkad'){ $(id).textContent=d?(`${label} ${timeSec(d)}`):'—'}
+function markSync(key,id,label='Synkad'){state.sync[key]=Date.now();stamp(id,state.sync[key],label)}
+function refreshStatus(key,id,source){
+  const successAt=key==='market'?state.marketLastSuccess:state.sync[key];
+  if(key==='system' && systemFailCount>0 && !state.sync.system && (Date.now()-systemLastAttempt)<30000){
+    status(id,'Hämtar…','loading','Väntar på ENTSO-E-data.'); return;
+  }
+  const hasData=key==='market'?Object.keys(state.prices||{}).length>0:!!state.sync[key];
+  const age=successAt?Date.now()-successAt:Infinity;
+  const max=SYNC_MAX[key];
+  if(successAt&&age<=max){
+    status(id,'LIVE','ok',`Senast synkad för ${Math.round(age/1000)} s sedan.`);
+  }else if(hasData){
+    status(id,'STALE','stale',`Ingen ny lyckad hämtning på ${Math.round(age/1000)} s (gräns ${Math.round(max/1000)} s). Visar senast kända data.`);
+  }else if(attempted[key]){
+    status(id,'EJ NÅBAR','err','Senaste hämtningsförsöket misslyckades och ingen data finns ännu.');
+  }else{
+    status(id,'Hämtar…','loading','Väntar på första hämtningen.');
+  }
+}
+function svgSingle(values,min,max,ref=null,endTime=null,periodMs=1000){
+  if(!Array.isArray(values)||!values.length)return '<div class="muted small">Ingen frekvensdata ännu</div>';
+  const w=760,h=260,pL=48,pR=12,pT=12,pB=24;
+  const zMin=49.40,zMax=50.60;
+  const plotW=w-pL-pR, plotH=h-pT-pB;
+  const y=v=>pT+(zMax-v)/(zMax-zMin)*plotH;
+  const x=i=>pL+i*plotW/Math.max(1,values.length-1);
+  const zone=(lo,hi,fill,op)=>`<rect x="${pL}" y="${y(hi)}" width="${plotW}" height="${Math.max(0,y(lo)-y(hi))}" fill="${fill}" opacity="${op}"/>`;
+  const zones =
+    zone(49.40,49.50,'#ee801c',0.18)+
+    zone(49.50,49.90,'#e5ac00',0.13)+
+    zone(49.90,50.10,'#285f2e',0.20)+
+    zone(50.10,50.50,'#e5ac00',0.13)+
+    zone(50.50,50.60,'#ee801c',0.18);
+  const boundary=[49.50,49.90,50.10,50.50].map(v=>{
+    const yy=y(v);return `<line class="freq-boundary" x1="${pL}" y1="${yy}" x2="${w-pR}" y2="${yy}"/>`;
+  }).join('');
+  const optimumY=y(50.00);
+  const optimum=`<line class="freq-optimum" x1="${pL}" y1="${optimumY}" x2="${w-pR}" y2="${optimumY}"/>`;
+  const axis=[49.50,49.90,50.00,50.10,50.50].map(v=>{
+    const yy=y(v);const cls=v===50 ? 'freq-zone-axis-opt' : 'freq-zone-axis';return `<text x="${pL-7}" y="${yy+4}" text-anchor="end" class="${cls}">${v.toFixed(2).replace('.',',')}</text>`;
+  }).join('');
+  const pts=values.map((v,i)=>`${x(i)},${y(v)}`).join(' ');
+  const line=`<polyline points="${pts}" fill="none" class="freq-trace" stroke-linejoin="round" stroke-linecap="round"/>`;
+  const spanMs=Math.min((values.length-1)*periodMs,30*60*1000);
+  const ticks=[];
+  const endMs=endTime?endTime.getTime():Date.now();
+  const rawStartMs=endMs-spanMs;
+  const step=5*60*1000;
+  const firstTickMs=Math.ceil(rawStartMs/step)*step;
+  const lastTickMs=Math.floor(endMs/step)*step;
+  for(let tickMs=firstTickMs;tickMs<=lastTickMs;tickMs+=step){
+    const ratio=spanMs>0?(tickMs-rawStartMs)/spanMs:0;
+    const xx=pL+Math.max(0,Math.min(1,ratio))*plotW;
+    const dt=new Date(tickMs);
+    const label=String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0');
+    const first=tickMs===firstTickMs,last=tickMs===lastTickMs;
+    ticks.push(`<text x="${xx}" y="${h-5}" text-anchor="${first?'start':last?'end':'middle'}" class="freq-x-axis">${label}</text>`);
+  }
+  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" class="freq-svg">${zones}${boundary}${optimum}${axis}${line}${ticks.join('')}<g class="freq-hover" visibility="hidden"><line class="freq-hover-line" x1="${pL}" y1="${pT}" x2="${pL}" y2="${h-pB}"/><circle class="freq-hover-dot" cx="${pL}" cy="${y(values[0])}" r="4"/></g></svg>`;
+}
+
+function addFrequencyHover(){
+  const chart=$('freqChart'),svg=chart?.querySelector('svg');
+  if(!chart||!svg||!state.freq.length)return;
+  chart.querySelector('.freq-tooltip')?.remove();
+  const tip=document.createElement('div');
+  tip.className='freq-tooltip';
+  chart.appendChild(tip);
+  const hover=svg.querySelector('.freq-hover'), line=svg.querySelector('.freq-hover-line'), dot=svg.querySelector('.freq-hover-dot');
+  const values=state.freq;
+  const ms=Number(state.freqPeriodMs||1000);
+  const end=state.freqEndTime instanceof Date?state.freqEndTime:new Date();
+  const startMs=end.getTime()-(values.length-1)*ms;
+  const w=760,h=260,pL=48,pR=12,pT=12,pB=24,plotW=w-pL-pR,plotH=h-pT-pB,zMin=49.40,zMax=50.60;
+  const y=v=>pT+(zMax-v)/(zMax-zMin)*plotH;
+  const x=i=>pL+i*plotW/Math.max(1,values.length-1);
+  const fmtTime=d=>d.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const update=e=>{
+    const r=svg.getBoundingClientRect();
+    if(!r.width||!r.height)return;
+    const localX=Math.max(0,Math.min(r.width,e.clientX-r.left));
+    const ratio=localX/r.width;
+    const plotRatio=Math.max(0,Math.min(1,(ratio-(pL/w))/(plotW/w)));
+    const i=Math.round(plotRatio*(values.length-1));
+    const v=values[i];
+    if(!Number.isFinite(v))return;
+    const xx=x(i),yy=y(v);
+    line.setAttribute('x1',xx);line.setAttribute('x2',xx);
+    dot.setAttribute('cx',xx);dot.setAttribute('cy',yy);
+    hover.setAttribute('visibility','visible');
+    const d=new Date(startMs+i*ms);
+    tip.innerHTML=`<div class="tt-time">${fmtTime(d)}</div><div class="tt-value">${fmt(v,2)} Hz</div>`;
+    const chartRect=chart.getBoundingClientRect();
+    let left=e.clientX-chartRect.left+12;
+    const top=e.clientY-chartRect.top-48;
+    if(left+125>chart.clientWidth)left=e.clientX-chartRect.left-137;
+    tip.style.left=Math.max(4,left)+'px';
+    tip.style.top=Math.max(4,top)+'px';
+    tip.style.display='block';
+  };
+  chart.addEventListener('mousemove',update);
+  chart.addEventListener('mouseleave',()=>{hover.setAttribute('visibility','hidden');tip.style.display='none'});
+}
+
+
+async function getJson(url,timeoutMs=8000){const sep=url.includes('?')?'&':'?';const c=new AbortController(),timer=setTimeout(()=>c.abort(),timeoutMs);try{const r=await fetch(url+sep+'t='+Date.now(),{cache:'no-store',signal:c.signal});if(!r.ok)throw new Error('HTTP '+r.status);return await r.json()}catch(e){if(e?.name==='AbortError')throw new Error('timeout efter '+Math.round(timeoutMs/1000)+' s');throw e}finally{clearTimeout(timer)}}
+
+function parseEntries(area){
+  const d=state.prices[area];
+  const rows=Array.isArray(d?.prices)?d.prices:[];
+  return rows.map(x=>({start:x.time_start,end:x.time_end,v:Number(x.SEK_per_kWh)*1000}))
+    .filter(x=>Number.isFinite(x.v)&&x.start&&x.end)
+    .sort((a,b)=>new Date(a.start)-new Date(b.start));
+}
+function nextIdx(e){const now=Date.now();let i=e.findIndex(x=>new Date(x.end).getTime()>now);return i<0?e.length-1:i}
+
+function rollingPriceChart(){
+  const now=Date.now(),windowStart=now-4*60*60*1000;
+  const colors=['#ee801c','#004b6e','#4f9f55','#e5ac00'];
+  const series=A.map(a=>({name:a,entries:parseEntries(a)}))
+    .map(s=>({...s,entries:s.entries.filter(x=>new Date(x.end).getTime()>windowStart)}));
+  const all=series.flatMap(s=>s.entries);
+  if(!all.length)return '<div class="muted small">Ingen prisdata ännu.</div>';
+  const end=Math.max(now+15*60*1000,...all.map(x=>new Date(x.end).getTime()));
+  const minRaw=Math.min(...all.map(x=>x.v)),maxRaw=Math.max(...all.map(x=>x.v));
+  let yMin=Math.floor(Math.min(0,minRaw)/250)*250,yMax=Math.ceil(Math.max(2000,maxRaw)/250)*250;
+  if(yMax-yMin<1000){const mid=(yMax+yMin)/2;yMin=Math.floor((mid-500)/250)*250;yMax=Math.ceil((mid+500)/250)*250;}
+  const w=760,h=250,pl=48,pr=12,pt=10,pb=32,plotW=w-pl-pr,plotH=h-pt-pb;
+  const x=t=>pl+(t-windowStart)/(end-windowStart)*plotW;
+  const y=v=>pt+(yMax-v)/(yMax-yMin)*plotH;
+  // Dynamisk y-axel: sikta på ca 5–7 etiketter och välj ett "snyggt" intervall.
+  // På så sätt blir axeln luftig vid stora prisvariationer men inte för grov när
+  // priserna ligger samlat.
+  const yRange=yMax-yMin;
+  const yStepCandidates=[100,250,500,1000,2000,5000,10000,20000];
+  const yStep=yStepCandidates.find(step=>yRange/step<=6) || 50000;
+  const yTicks=[];for(let v=yMin;v<=yMax;v+=yStep)yTicks.push(v);
+  const grid=yTicks.map(v=>`<line x1="${pl}" y1="${y(v)}" x2="${w-pr}" y2="${y(v)}" stroke="#dfe5e2" stroke-width="${v===0?1.2:0.7}"/><text x="${pl-6}" y="${y(v)+3}" text-anchor="end" class="axis">${fmt0(v)}</text>`).join('');
+  const hour=60*60*1000;
+  const firstHour=Math.ceil(windowStart/hour)*hour;
+  let vgrid='';
+  for(let t=firstHour;t<=end;t+=hour){
+    const xx=x(t);if(xx<pl||xx>w-pr)continue;
+    vgrid+=`<line x1="${xx}" y1="${pt}" x2="${xx}" y2="${pt+plotH}" stroke="#edf2ef" stroke-width="0.7"/>`;
+  }
+  const paths=series.map((s,si)=>{
+    const es=s.entries.filter(e=>new Date(e.end).getTime()>windowStart&&new Date(e.start).getTime()<end);
+    if(!es.length)return '';
+    let d='';
+    es.forEach((e,i)=>{
+      const a=Math.max(new Date(e.start).getTime(),windowStart),b=Math.min(new Date(e.end).getTime(),end);
+      if(b<=a)return;
+      const xa=x(a),xb=x(b),yy=y(e.v);
+      d+=i===0?`M ${xa} ${yy} L ${xb} ${yy}`:` L ${xa} ${yy} L ${xb} ${yy}`;
+    });
+    return `<path d="${d}" fill="none" stroke="${colors[si]}" stroke-width="2.5" stroke-linejoin="miter" stroke-linecap="square"/>`;
+  }).join('');
+  const nowX=Math.max(pl,Math.min(w-pr,x(now)));
+  const nowLine=`<line x1="${nowX}" y1="${pt}" x2="${nowX}" y2="${pt+plotH}" stroke="#0e7490" stroke-width="1.5" stroke-dasharray="4 3"/><text x="${nowX}" y="${pt+9}" text-anchor="${nowX>w-70?'end':'start'}" class="axis" fill="#0e7490">NU</text>`;
+  let labels='';
+  const startDate=new Date(windowStart);
+  const firstLabel=Math.ceil(windowStart/(2*hour))*(2*hour);
+  for(let t=firstLabel;t<=end;t+=2*hour){
+    const d=new Date(t),xx=x(t);if(xx<pl||xx>w-pr)continue;
+    const tm=d.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});
+    const prev=new Date(t-2*hour);
+    const dateChanged=d.getDate()!==prev.getDate()||d.getMonth()!==prev.getMonth();
+    labels+=`<text x="${xx}" y="${h-16}" text-anchor="middle" class="axis">${tm}</text>`;
+    if(dateChanged)labels+=`<text x="${xx}" y="${h-4}" text-anchor="middle" class="axis" font-weight="700">${d.toLocaleDateString('sv-SE',{day:'2-digit',month:'short'})}</text>`;
+  }
+  const svg=`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">${grid}${vgrid}${paths}${nowLine}${labels}</svg>`;
+  const legend=`<div class="legend">${A.map((a,i)=>`<span><i style="background:${colors[i]}"></i>${a}</span>`).join('')}</div>`;
+  return svg+legend;
+}
+
+function attachPriceHover(){
+  const chart=$('priceChart');
+  const svg=chart?.querySelector('svg');
+  if(!chart||!svg)return;
+  const old=chart.querySelector('.price-hover'); if(old)old.remove();
+  const tip=document.createElement('div'); tip.className='price-hover'; chart.appendChild(tip);
+  const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+  line.setAttribute('class','price-hover-line'); line.setAttribute('y1','10'); line.setAttribute('y2','218'); line.style.display='none';
+  svg.appendChild(line);
+  const W=760,H=250,pl=48,pr=12,pt=10,pb=32;
+  const windowStart=Date.now()-4*60*60*1000;
+  const now=Date.now();
+  const series=A.map(a=>({name:a,entries:parseEntries(a)}));
+  const all=series.flatMap(s=>s.entries);
+  if(!all.length)return;
+  const end=Math.max(now+15*60*1000,...all.map(e=>new Date(e.end).getTime()));
+  const plotW=W-pl-pr;
+  const xToT=x=>windowStart+(x-pl)/plotW*(end-windowStart);
+  const fmtTime=t=>new Date(t).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});
+  const getVal=(entries,t)=>{const e=entries.find(e=>new Date(e.start).getTime()<=t&&new Date(e.end).getTime()>t);return e?.v};
+  svg.addEventListener('mousemove',ev=>{
+    const r=svg.getBoundingClientRect();
+    const x=(ev.clientX-r.left)/r.width*W;
+    if(x<pl||x>W-pr){tip.style.display='none';line.style.display='none';return;}
+    const t=Math.max(windowStart,Math.min(end,xToT(x)));
+    const vals=series.map(s=>({name:s.name,v:getVal(s.entries,t)}));
+    tip.innerHTML='<div class="ph-time">'+new Date(t).toLocaleString('sv-SE',{weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})+'</div>'+vals.map(v=>'<div class="ph-row"><span>'+v.name+'</span><span class="ph-val">'+(v.v==null?'—':fmt(v.v,1)+' SEK/MWh')+'</span></div>').join('');
+    const cx=x/r.width*chart.clientWidth;
+    const cy=ev.clientY-r.top;
+    tip.style.display='block';
+    let left=cx+12; if(left+175>chart.clientWidth)left=cx-187;
+    tip.style.left=Math.max(4,left)+'px'; tip.style.top=Math.max(4,cy-20)+'px';
+    line.setAttribute('x1',x); line.setAttribute('x2',x); line.style.display='block';
+  });
+  svg.addEventListener('mouseleave',()=>{tip.style.display='none';line.style.display='none'});
+}
+
+function renderPrices(){
+  const cur=A.map(a=>{const e=parseEntries(a),i=nextIdx(e);return {a,e,i,x:e[i]}});
+  $('areaCards').innerHTML=cur.map(o=>`<div class="card"><div class="label">${o.a}</div><div class="price ${o.x?.v<0?'down':'up'}">${o.x?fmt(o.x.v):'—'}<span class="unit">SEK/MWh</span></div><div class="time">${o.x?time(o.x.start)+'–'+time(o.x.end):'—'}</div></div>`).join('');
+  $('priceWindowTitle').textContent=`Day-ahead · ${fmt0(Math.max(0,Math.round((Math.max(...cur.map(o=>o.e.at(-1)?.end?new Date(o.e.at(-1).end).getTime():0))-Date.now())/3600000)))} h framåt · SE1–SE4`;
+  const chart=rollingPriceChart();
+  $('priceChart').innerHTML=chart;
+  attachPriceHover();
+  return cur;
+}
+
+async function prices(){
+  attempted.market=true;
+  try{
+    const d=await getJson('/api/elpriset',15000);
+    if(!d?.data)throw Error('API-svar saknas (kontrollera att PowerShell-servern körs)');
+    state.prices=d.data;
+    const cur=renderPrices();
+    const missing=cur.filter(o=>!o.x).map(o=>o.a);
+    if(!missing.length){
+      state.marketLastSuccess=Date.now();
+      status('marketStatus','LIVE','ok');
+      $('marketStatus').title=`Aktuell kvart: ${cur[0].x?timeSec(cur[0].x.start):'—'}`;
+    }else{
+      const serverErrors=A.flatMap(a=>(Array.isArray(d.data[a]?.errors)?d.data[a].errors:[]).map(e=>a+': '+e));
+      const serverCounts=A.map(a=>a+'='+(d.data[a]?.count??'?')).join(', ');
+      status('marketStatus','Saknar: '+missing.join(', '),'err');
+      $('marketStatus').title=(serverErrors.length?serverErrors.join('\n')+'\n':'')+'Punkter hämtade per område: '+serverCounts;
+      console.warn('[Ruta1] saknar aktuellt pris för',missing,'| punkter per område:',serverCounts);
+    }
+    markSync('market','marketUpdated','Synkad');
+  }catch(e){
+    // Never blank route 1 because a refresh failed. Keep the last verified dataset visible.
+    if(state.prices && Object.keys(state.prices).length){
+      renderPrices();
+    }
+    refreshStatus('market','marketStatus','Elprisetjustnu');
+    $('marketStatus').title=String(e?.message||e) + (Object.keys(state.prices||{}).length ? '\nVisar senast fungerande prisdata. Ny hämtning misslyckades.' : '');
+    console.warn('[Ruta1] prisuppdatering misslyckades:',e);
+  }
+}
+
+// ENTSO-E mFRR EAM
+// API-token hanteras server-side som en Cloudflare secret.
+const ENTSOE_AREAS = {
+  SE1: '10Y1001A1001A44P',
+  SE2: '10Y1001A1001A45N',
+  SE3: '10Y1001A1001A46L',
+  SE4: '10Y1001A1001A47J'
+};
+// ENTSO-E hämtas via Cloudflare Pages Function. Token ligger server-side.
+const ENTSOE_PROXY = '/api/entsoe/mfrr';
+function entsoePeriod(){
+  const now = new Date();
+  // Hämta hela innevarande lokala dygnets mFRR-historik varje gång.
+  // ENTSO-E använder UTC i API:t, medan dashboarden visar svensk lokal tid.
+  const from = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const to = new Date(now.getTime() + 30*60*1000);
+  const f=d=>d.getUTCFullYear()
+    +String(d.getUTCMonth()+1).padStart(2,'0')
+    +String(d.getUTCDate()).padStart(2,'0')
+    +String(d.getUTCHours()).padStart(2,'0')
+    +String(d.getUTCMinutes()).padStart(2,'0');
+  return {from:f(from),to:f(to)};
+}
+function parseENTSOEMFRR(xmlText, area){
+  const doc = new DOMParser().parseFromString(xmlText,'application/xml');
+  const parserError = doc.querySelector('parsererror');
+  if(parserError) throw Error('ogiltigt ENTSO-E XML');
+  const err = doc.getElementsByTagNameNS('*','Reason');
+  if(err.length){
+    const text = err[0].getElementsByTagNameNS('*','text')[0]?.textContent || 'ENTSO-E API-fel';
+    throw Error(text);
+  }
+  const out=[];
+  const series = Array.from(doc.getElementsByTagNameNS('*','TimeSeries'))
+    .filter(ts => (ts.getElementsByTagNameNS('*','businessType')[0]?.textContent||'') === 'A97');
+  for(const ts of series){
+    const dir = ts.getElementsByTagNameNS('*','flowDirection.direction')[0]?.textContent || '';
+    const key = dir === 'A01' ? 'up' : dir === 'A02' ? 'down' : null;
+    if(!key) continue;
+    const periods = Array.from(ts.getElementsByTagNameNS('*','Period'));
+    for(const period of periods){
+      const ti = period.getElementsByTagNameNS('*','timeInterval')[0];
+      const st = ti?.getElementsByTagNameNS('*','start')[0]?.textContent;
+      const startMs = Date.parse(st||'');
+      if(!Number.isFinite(startMs)) continue;
+      const resolution = period.getElementsByTagNameNS('*','resolution')[0]?.textContent || '';
+      const stepMs = {PT15M:15,PT30M:30,PT60M:60,PT1H:60}[resolution]*60000 || 15*60000;
+      const points = Array.from(period.getElementsByTagNameNS('*','Point'));
+      for(const point of points){
+        const pos = Number(point.getElementsByTagNameNS('*','position')[0]?.textContent);
+        const price = Number(point.getElementsByTagNameNS('*','activation_Price.amount')[0]?.textContent);
+        if(!Number.isFinite(pos) || !Number.isFinite(price)) continue;
+        out.push({
+          t:new Date(startMs+(pos-1)*stepMs),
+          a:area,
+          [key]:price
+        });
+      }
+    }
+  }
+  return out;
+}
+function mergeENTSOEMFRR(rows){
+  const m = new Map();
+  for(const r of rows){
+    const k=r.a+'|'+r.t.getTime();
+    const z=m.get(k)||{t:r.t,a:r.a,up:null,down:null};
+    if(Number.isFinite(r.up)) z.up=r.up;
+    if(Number.isFinite(r.down)) z.down=r.down;
+    m.set(k,z);
+  }
+  return Array.from(m.values()).sort((a,b)=>a.t-b.t);
+}
+let mfrrRowsCache=[]; let mfrrAreaIndex=0; const mfrrAreas=['SE1','SE2','SE3','SE4']; const mfrrAreaNames={SE1:'SE1',SE2:'SE2',SE3:'SE3',SE4:'SE4'}; const mfrrAreaLatest={};
+
+function mfrrSvg(rows,area){
+  const now=new Date(), q=new Date(Math.floor(now.getTime()/900000)*900000), end=q.getTime(), start=new Date(q.getFullYear(),q.getMonth(),q.getDate()).getTime(), w=860,h=300,pl=52,pr=18,pt=12,pb=40;
+  const rr=rows.filter(r=>r.a===area&&r.t.getTime()>=start&&r.t.getTime()<=end); if(!rr.length)return '<div class="muted small">Ingen publicerade mFRR-utfall för '+mfrrAreaNames[area]+' i tidsfönstret ännu.</div>';
+  const vals=rr.flatMap(r=>[r.up,r.down]).filter(Number.isFinite), lo=Math.min(0,...vals),hi=Math.max(100,...vals),raw=(hi-lo)/4,nice=[10,25,50,100,200,500,1000],step=nice.find(v=>v>=raw)||Math.ceil(raw/500)*500,ymin=Math.floor(lo/step)*step,ymax=Math.ceil(hi/step)*step;
+  const x=t=>pl+(t-start)/(end-start)*(w-pl-pr), y=v=>pt+(ymax-v)/(ymax-ymin)*(h-pt-pb), tick=d=>`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  let svg=`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-label="mFRR-priser ${mfrrAreaNames[area]}">`;
+  for(let v=ymin;v<=ymax+.001;v+=step)svg+=`<line x1="${pl}" y1="${y(v)}" x2="${w-pr}" y2="${y(v)}" class="gridline"/><text x="${pl-8}" y="${y(v)+3}" text-anchor="end" class="axis">${fmt0(v)}</text>`;
+  for(let t=start;t<=end;t+=900000){const d=new Date(t),xx=x(t);svg+=`<line x1="${xx}" y1="${h-pb}" x2="${xx}" y2="${h-pb+5}" class="xtick"/>`;if(d.getMinutes()%60===0 || (d.getHours()===0 && d.getMinutes()===0))svg+=`<text x="${xx}" y="${h-12}" text-anchor="middle" class="axis">${tick(d)}</text>`;}
+  for(const dir of ['up','down']){
+    const series=rr.filter(r=>Number.isFinite(r[dir]));
+    if(!series.length)continue;
+    let d='M '+x(series[0].t.getTime())+' '+y(series[0][dir]);
+    for(let i=0;i<series.length;i++){
+      const cur=series[i], t=cur.t.getTime(), next=series[i+1]?.t?.getTime();
+      const segmentEnd=Number.isFinite(next)?Math.min(next,t+900000,end):Math.min(t+900000,end);
+      d+=' H '+x(segmentEnd);
+      if(Number.isFinite(next) && next<=end && next===segmentEnd){
+        const nv=series[i+1][dir];
+        if(Number.isFinite(nv))d+=' V '+y(nv);
+      }
+    }
+    svg+=`<path d="${d}" class="mfrr-line ${dir}"/>`;
+  }
+  svg+=`<line x1="${x(end)}" y1="${pt}" x2="${x(end)}" y2="${h-pb}" class="nowline"/><text x="${Math.max(pl+12,Math.min(w-pr-12,x(end)))}" y="${pt+11}" text-anchor="${x(end)>w-70?'end':'start'}" class="axis" fill="#0e7490">NU</text>`;
+  svg+=`<g class="mfrr-hover" visibility="hidden"><line class="mfrr-hover-line" x1="${pl}" y1="${pt}" x2="${pl}" y2="${h-pb}"/><circle class="mfrr-hover-dot up" cx="${pl}" cy="${y(0)}" r="4"/><circle class="mfrr-hover-dot down" cx="${pl}" cy="${y(0)}" r="4"/></g></svg>`;
+  return svg;
+}
+
+function attachMfrrHover(){
+  const chart=$('mfrrChart'),svg=chart?.querySelector('svg');
+  if(!chart||!svg)return;
+  chart.querySelector('.mfrr-tooltip')?.remove();
+
+  const tip=document.createElement('div');
+  tip.className='mfrr-tooltip';
+  chart.appendChild(tip);
+
+  const hover=svg.querySelector('.mfrr-hover');
+  const line=svg.querySelector('.mfrr-hover-line');
+  const dotUp=svg.querySelector('.mfrr-hover-dot.up');
+  const dotDown=svg.querySelector('.mfrr-hover-dot.down');
+  if(!hover||!line||!dotUp||!dotDown)return;
+
+  const area=mfrrAreas[mfrrAreaIndex];
+  const now=new Date();
+  const q=new Date(Math.floor(now.getTime()/900000)*900000);
+  const end=q.getTime();
+  const start=new Date(q.getFullYear(),q.getMonth(),q.getDate()).getTime();
+  const rr=mfrrRowsCache
+    .filter(r=>r.a===area && r.t.getTime()>=start && r.t.getTime()<=end)
+    .sort((a,b)=>a.t-b.t);
+  if(!rr.length)return;
+
+  const W=860,H=300,pl=52,pr=18,pt=12,pb=40;
+  const plotW=W-pl-pr;
+  const vals=rr.flatMap(r=>[r.up,r.down]).filter(Number.isFinite);
+  const lo=Math.min(0,...vals),hi=Math.max(100,...vals),raw=(hi-lo)/4;
+  const nice=[10,25,50,100,200,500,1000];
+  const step=nice.find(v=>v>=raw)||Math.ceil(raw/500)*500;
+  const ymin=Math.floor(lo/step)*step,ymax=Math.ceil(hi/step)*step;
+  const x=t=>pl+(t-start)/(end-start)*plotW;
+  const y=v=>pt+(ymax-v)/(ymax-ymin)*(H-pt-pb);
+  const fmtTime=d=>d.toLocaleString('sv-SE',{weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+
+  const valueAt=(dir,t)=>{
+    let candidate=null;
+    for(const r of rr){
+      const rt=r.t.getTime();
+      if(rt<=t && t<rt+900000 && Number.isFinite(r[dir])) return r;
+      if(rt<=t && Number.isFinite(r[dir])) candidate=r;
+    }
+    return candidate && Math.abs(candidate.t.getTime()-t)<=900000 ? candidate : null;
+  };
+
+  const update=e=>{
+    const r=svg.getBoundingClientRect();
+    if(!r.width||!r.height)return;
+    const rawX=(e.clientX-r.left)/r.width*W;
+    if(rawX<pl||rawX>W-pr){
+      tip.style.display='none';
+      hover.setAttribute('visibility','hidden');
+      return;
+    }
+
+    const t=Math.max(start,Math.min(end,start+(rawX-pl)/plotW*(end-start)));
+    const up=valueAt('up',t),down=valueAt('down',t);
+    const candidates=[up?.t?.getTime(),down?.t?.getTime()].filter(Number.isFinite);
+    const qt=candidates.length?Math.min(...candidates):t;
+    const xx=x(qt);
+
+    line.setAttribute('x1',xx);
+    line.setAttribute('x2',xx);
+
+    if(up){
+      dotUp.setAttribute('cx',xx);
+      dotUp.setAttribute('cy',y(up.up));
+      dotUp.setAttribute('visibility','visible');
+    }else dotUp.setAttribute('visibility','hidden');
+
+    if(down){
+      dotDown.setAttribute('cx',xx);
+      dotDown.setAttribute('cy',y(down.down));
+      dotDown.setAttribute('visibility','visible');
+    }else dotDown.setAttribute('visibility','hidden');
+
+    hover.setAttribute('visibility','visible');
+
+    const activeTime=up?.t||down?.t||new Date(qt);
+    tip.innerHTML=
+      `<div class="mtt-time">${fmtTime(activeTime)}</div>`+
+      `<div class="mtt-row"><span class="mtt-label up">Uppreglering</span><span class="mtt-val">${up?fmt(up.up,1)+' SEK/MWh':'—'}</span></div>`+
+      `<div class="mtt-row"><span class="mtt-label down">Nedreglering</span><span class="mtt-val">${down?fmt(down.down,1)+' SEK/MWh':'—'}</span></div>`;
+
+    const chartRect=chart.getBoundingClientRect();
+    const cx=e.clientX-chartRect.left;
+    const cy=e.clientY-chartRect.top;
+    let left=cx+12;
+    if(left+175>chart.clientWidth)left=cx-187;
+    tip.style.left=Math.max(4,left)+'px';
+    tip.style.top=Math.max(4,cy-48)+'px';
+    tip.style.display='block';
+  };
+
+  chart.addEventListener('mousemove',update);
+  chart.addEventListener('mouseleave',()=>{
+    hover.setAttribute('visibility','hidden');
+    dotUp.setAttribute('visibility','hidden');
+    dotDown.setAttribute('visibility','hidden');
+    tip.style.display='none';
+  });
+}
+
+function renderMfrrArea(){
+  if(!mfrrRowsCache.length)return;
+  const area=mfrrAreas[mfrrAreaIndex];
+  document.querySelectorAll('.mfrr-card').forEach((el,i)=>el.classList.toggle('active',i===mfrrAreaIndex));
+  document.querySelectorAll('#mfrrRotation span').forEach((el,i)=>el.classList.toggle('active',i===mfrrAreaIndex));
+  $('mfrrChart').innerHTML=mfrrSvg(mfrrRowsCache,area);
+  attachMfrrHover();
+}
+
+async function mfrr(){
+  if(window.mfrrBusy)return;window.mfrrBusy=true;attempted.system=true;systemLastAttempt=Date.now();
+  try{
+    const {from,to}=entsoePeriod();
+    const r=await fetch(ENTSOE_PROXY+'?from='+encodeURIComponent(from)+'&to='+encodeURIComponent(to),{
+      cache:'no-store'
+    });
+    if(!r.ok){
+      let detail='';
+      try{const e=await r.json();detail=e?.error||JSON.stringify(e?.areas||e)||''}catch{}
+      throw Error('ENTSO-E proxy HTTP '+r.status+(detail?' · '+detail:''));
+    }
+    const payload=await r.json();
+    if(!payload || !payload.data) throw Error('ogiltigt svar från ENTSO-E-proxy');
+    if(payload.errors) console.warn('[mFRR] Delvisa ENTSO-E-fel:',payload.errors);
+    const parts=[];
+    for(const [area,xmlText] of Object.entries(payload.data)){
+      if(typeof xmlText==='string' && xmlText.trim()) parts.push(parseENTSOEMFRR(xmlText,area));
+    }
+    const rows=mergeENTSOEMFRR(parts.flat()).filter(r=>r.t.getTime()<=Date.now()+60000);
+    if(!rows.length) throw Error('inga realiserade mFRR-rader från ENTSO-E');
+    const latest={};
+    for(const a of mfrrAreas){
+      const candidates=rows.filter(r=>r.a===a && (Number.isFinite(r.up)||Number.isFinite(r.down))).sort((x,y)=>y.t-x.t);
+      if(candidates.length){
+        const z=candidates[0];
+        // Never let a late/out-of-order ENTSO-E response move an area backwards.
+        if(!mfrrAreaLatest[a] || z.t.getTime() >= mfrrAreaLatest[a].t.getTime()){
+          mfrrAreaLatest[a]=z;
+        }
+        latest[a]=mfrrAreaLatest[a];
+      }
+    }
+    const times=Object.values(mfrrAreaLatest).map(z=>z.t.getTime()).filter(Number.isFinite);
+    const globalLatestMs=times.length?Math.max(...times):NaN;
+    const q=t=>t.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});
+    for(const se of mfrrAreas){
+      const z=mfrrAreaLatest[se];
+      const card=document.querySelectorAll('.mfrr-card')[mfrrAreas.indexOf(se)];
+      if(z){
+        $(`mfrr-${se}-up`).textContent=z.up==null?'—':fmt(z.up,2);
+        $(`mfrr-${se}-down`).textContent=z.down==null?'—':fmt(z.down,2);
+        const end=new Date(z.t.getTime()+15*60*1000);
+        const period=`${q(z.t)}–${q(end)}`;
+        if(card){
+          card.title=`${se} · ENTSO-E senaste utfall: ${period}`;
+          card.classList.toggle('stale',Number.isFinite(globalLatestMs) && globalLatestMs-z.t.getTime()>=15*60*1000);
+        }
+      }
+    }
+    if(times.length){
+      const latestStart=new Date(globalLatestMs);
+      const latestEnd=new Date(latestStart.getTime()+15*60*1000);
+      $('mfrrKpiOutcomeTime').textContent=`${q(latestStart)}–${q(latestEnd)}`;
+      console.info('[mFRR] Senaste period per område:',Object.fromEntries(mfrrAreas.map(a=>[a,mfrrAreaLatest[a]?q(mfrrAreaLatest[a].t)+'–'+q(new Date(mfrrAreaLatest[a].t.getTime()+15*60000)):'saknas'])));
+    }
+    // Byt bara ut områden som faktiskt fick ett giltigt svar. Ett tillfälligt
+    // timeout/fel för SE2 eller SE3 får därför inte tömma deras redan laddade historik.
+    const successfulAreas=[...new Set(rows.map(r=>r.a))];
+    const oldByArea=new Map();
+    for(const r of mfrrRowsCache) oldByArea.set(r.a+'|'+r.t.getTime(),r);
+    for(const area of successfulAreas){
+      for(const key of [...oldByArea.keys()]) if(key.startsWith(area+'|')) oldByArea.delete(key);
+    }
+    for(const r of rows) oldByArea.set(r.a+'|'+r.t.getTime(),r);
+    mfrrRowsCache=Array.from(oldByArea.values()).sort((a,b)=>a.t-b.t);
+    // Keep the per-area latest pointer aligned with the retained cache.
+    for(const a of mfrrAreas){
+      const c=mfrrRowsCache.filter(r=>r.a===a && (Number.isFinite(r.up)||Number.isFinite(r.down))).sort((x,y)=>y.t-x.t);
+      if(c.length && (!mfrrAreaLatest[a] || c[0].t.getTime()>mfrrAreaLatest[a].t.getTime())) mfrrAreaLatest[a]=c[0];
+    }
+    renderMfrrArea();
+    markSync('system','systemUpdated','Synkad');
+    systemFailCount=0;
+    status('systemStatus',payload.cached?'LIVE · CACHE':'LIVE','ok',payload.cached?'Visar senast lyckade ENTSO-E-data medan ny hämtning väntar eller delvis misslyckades.':'Senast lyckad ENTSO-E-hämtning.');
+  }catch(e){
+    console.warn('ENTSO-E mFRR:',e);
+    const msg=String(e?.message||e);
+    systemFailCount++;
+    // A temporary ENTSO-E failure should not make an already working dashboard look dead.
+    // Keep verified data and let the next minute try again.
+    if(mfrrRowsCache.length){
+      renderMfrrArea();
+      status('systemStatus','LIVE · CACHE','stale',`Senaste lyckade EAM-data visas. Försök ${systemFailCount} misslyckades.`);
+    }else{
+      status('systemStatus',msg.startsWith('ENTSO-E-token')?'TOKEN SAKNAS':'HÄMTAR…',msg.startsWith('ENTSO-E-token')?'err':'loading',msg);
+    }
+  }finally{window.mfrrBusy=false;}
+}
+
+async function frequency(){
+  if(freqBusy)return;
+  freqBusy=true; attempted.freq=true;
+  try{
+    const d=await getJson('/api/statnett/frequency',8000);
+    const ms=Number(d.PeriodTickMs||1000),start=Number(d.StartPointUTC),vals=Array.isArray(d.Measurements)?d.Measurements.map(Number).filter(Number.isFinite):[];
+    if(!vals.length)throw Error('inga frekvensmätningar');
+    const windowMs=30*60*1000;
+    const latestAt=new Date(start+(vals.length-1)*ms);
+    const cutoff=latestAt.getTime()-windowMs;
+    const startIndex=Math.max(0, Math.floor((cutoff-start)/ms));
+    const take=vals.slice(startIndex);
+    state.freq=take;
+    const f=take[take.length-1],at=new Date(start+(vals.length-1)*ms),dev=f-50;
+    $('freq').textContent=fmt(f,2);
+    $('freqMeasureBadge').textContent='SENASTE MÄTNING · '+timeSec(at);
+    $('freqDev').textContent=(dev>=0?'+':'')+fmt(dev,2);
+    state.freqPeriodMs=ms;
+    state.freqEndTime=at;
+    $('freqChart').innerHTML=svgSingle(take,49.30,50.70,50,at,ms);
+    addFrequencyHover();
+    markSync('freq','freqUpdated','Synkad');
+    status('freqStatus','LIVE','ok');
+  }catch(e){
+    refreshStatus('freq','freqStatus','Statnett');
+    console.warn('Statnett frequency:',e);
+  }finally{freqBusy=false;}
+}
+
+function swedishDateTimeShort(d=new Date()){const days=['Sön.','Mån.','Tis.','Ons.','Tor.','Fre.','Lör.'];const months=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];const dd=String(d.getDate()).padStart(2,'0');return `${days[d.getDay()]} ${dd} ${months[d.getMonth()]}`}
+function swedishDateTime(d=new Date()){const days=['Sön.','Mån.','Tis.','Ons.','Tor.','Fre.','Lör.'];const months=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];const dd=String(d.getDate()).padStart(2,'0');const hh=String(d.getHours()).padStart(2,'0');const mm=String(d.getMinutes()).padStart(2,'0');const ss=String(d.getSeconds()).padStart(2,'0');return `${days[d.getDay()]} ${dd} ${months[d.getMonth()]} ${hh}:${mm}:${ss}`}
+function clock(){const d=new Date();$('clockDate').textContent=swedishDateTimeShort(d);$('clockMain').textContent=d.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}
+clock();setInterval(clock,1000);prices();mfrr();frequency();setInterval(prices,900000);setInterval(mfrr,60000);setInterval(()=>{mfrrAreaIndex=(mfrrAreaIndex+1)%4;renderMfrrArea()},7000);setInterval(frequency,2000);setInterval(()=>{refreshStatus('market','marketStatus','Elprisetjustnu');refreshStatus('system','systemStatus','Statnett');refreshStatus('freq','freqStatus','Statnett')},5000);
+</script>
+</html>
