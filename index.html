@@ -473,48 +473,109 @@ function svgSingle(values,min,max,ref=null,endTime=null,periodMs=1000){
 }
 
 function addFrequencyHover(){
-  const chart=$('freqChart'),svg=chart?.querySelector('svg');
-  if(!chart||!svg||!state.freq.length)return;
+  const chart=$('freqChart');
+  const svg=chart?.querySelector('svg');
+  if(!chart||!svg||!Array.isArray(state.freq)||!state.freq.length)return;
+
   chart.querySelector('.freq-tooltip')?.remove();
+
   const tip=document.createElement('div');
   tip.className='freq-tooltip';
   chart.appendChild(tip);
-  const hover=svg.querySelector('.freq-hover'), line=svg.querySelector('.freq-hover-line'), dot=svg.querySelector('.freq-hover-dot');
-  const values=state.freq;
+
+  const hover=svg.querySelector('.freq-hover');
+  const line=svg.querySelector('.freq-hover-line');
+  const dot=svg.querySelector('.freq-hover-dot');
+
+  if(!hover||!line||!dot)return;
+
+  const values=Array.isArray(state.freqDisplay)
+  ?state.freqDisplay
+  :state.freq;
   const ms=Number(state.freqPeriodMs||1000);
-  const end=state.freqEndTime instanceof Date?state.freqEndTime:new Date();
-  const startMs=end.getTime()-(values.length-1)*ms;
-  const w=760,h=260,pL=48,pR=12,pT=12,pB=24,plotW=w-pL-pR,plotH=h-pT-pB,zMin=49.40,zMax=50.60;
+
+  const points=values.filter(p =>
+    p &&
+    Number.isFinite(p.t) &&
+    Number.isFinite(p.value)
+  );
+
+  if(!points.length)return;
+
+  const w=760,h=260,pL=48,pR=12,pT=12,pB=24;
+  const plotW=w-pL-pR;
+  const plotH=h-pT-pB;
+  const zMin=49.40,zMax=50.60;
+
   const y=v=>pT+(zMax-v)/(zMax-zMin)*plotH;
-  const x=i=>pL+i*plotW/Math.max(1,values.length-1);
-  const fmtTime=d=>d.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const x=i=>pL+i*plotW/Math.max(1,points.length-1);
+
+  const fmtTime=d=>d.toLocaleTimeString('sv-SE',{
+    hour:'2-digit',
+    minute:'2-digit',
+    second:'2-digit'
+  });
+
   const update=e=>{
     const r=svg.getBoundingClientRect();
     if(!r.width||!r.height)return;
+
     const localX=Math.max(0,Math.min(r.width,e.clientX-r.left));
     const ratio=localX/r.width;
-    const plotRatio=Math.max(0,Math.min(1,(ratio-(pL/w))/(plotW/w)));
-    const i=Math.round(plotRatio*(values.length-1));
-    const v=values[i];
-    if(!Number.isFinite(v))return;
-    const xx=x(i),yy=y(v);
-    line.setAttribute('x1',xx);line.setAttribute('x2',xx);
-    dot.setAttribute('cx',xx);dot.setAttribute('cy',yy);
+
+    const plotRatio=Math.max(
+      0,
+      Math.min(1,(ratio-(pL/w))/(plotW/w))
+    );
+
+    const i=Math.round(
+      plotRatio*(points.length-1)
+    );
+
+    const point=points[i];
+    if(!point)return;
+
+    const v=point.value;
+    const xx=x(i);
+    const yy=y(v);
+
+    line.setAttribute('x1',xx);
+    line.setAttribute('x2',xx);
+
+    dot.setAttribute('cx',xx);
+    dot.setAttribute('cy',yy);
+
     hover.setAttribute('visibility','visible');
-    const d=new Date(startMs+i*ms);
-    tip.innerHTML=`<div class="tt-time">${fmtTime(d)}</div><div class="tt-value">${fmt(v,2)} Hz</div>`;
+
+    const d=new Date(point.t);
+
+    tip.innerHTML=
+      `<div class="tt-time">${fmtTime(d)}</div>`+
+      `<div class="tt-value">${fmt(v,2)} Hz</div>`;
+
     const chartRect=chart.getBoundingClientRect();
+
     let left=e.clientX-chartRect.left+12;
     const top=e.clientY-chartRect.top-48;
-    if(left+125>chart.clientWidth)left=e.clientX-chartRect.left-137;
+
+    if(left+125>chart.clientWidth){
+      left=e.clientX-chartRect.left-137;
+    }
+
     tip.style.left=Math.max(4,left)+'px';
     tip.style.top=Math.max(4,top)+'px';
     tip.style.display='block';
   };
-  chart.addEventListener('mousemove',update);
-  chart.addEventListener('mouseleave',()=>{hover.setAttribute('visibility','hidden');tip.style.display='none'});
-}
 
+  // Lyssnaren sitter på SVG:t som ersätts när grafen ritas om.
+  // Därmed samlas inte gamla lyssnare på hög.
+  svg.addEventListener('mousemove',update);
+
+  svg.addEventListener('mouseleave',()=>{
+    hover.setAttribute('visibility','hidden');
+    tip.style.display='none';
+  });
+}
 
 async function getJson(url,timeoutMs=8000){const sep=url.includes('?')?'&':'?';const c=new AbortController(),timer=setTimeout(()=>c.abort(),timeoutMs);try{const r=await fetch(url+sep+'t='+Date.now(),{cache:'no-store',signal:c.signal});if(!r.ok)throw new Error('HTTP '+r.status);return await r.json()}catch(e){if(e?.name==='AbortError')throw new Error('timeout efter '+Math.round(timeoutMs/1000)+' s');throw e}finally{clearTimeout(timer)}}
 
@@ -972,13 +1033,15 @@ async function mfrr(){
 
 async function frequency(){
   if(freqBusy)return;
-  freqBusy=true; attempted.freq=true;
+  freqBusy=true;
+  attempted.freq=true;
+
   try{
     const now=Date.now();
     const from=new Date(now-6000);
     const to=new Date(now);
 
-    const iso=d=>d.toISOString().replace(/\.\d{3}Z$/,'Z');
+    const iso=d=>d.toISOString().slice(0,19)+'Z';
 
     const url='/api/statnett/frequency'
       +`?from=${encodeURIComponent(iso(from))}&to=${encodeURIComponent(iso(to))}`;
@@ -987,8 +1050,10 @@ async function frequency(){
 
     const ms=Number(d.PeriodTickMs||1000);
     const start=Number(d.StartPointUTC);
+
     const vals=Array.isArray(d.Measurements)
-      ?d.Measurements.map(Number).filter(Number.isFinite):[];
+      ?d.Measurements.map(Number).filter(Number.isFinite)
+      :[];
 
     if(!vals.length)throw Error('inga frekvensmätningar');
 
@@ -997,8 +1062,8 @@ async function frequency(){
       value
     }));
 
-    // Lägg till nya datapunkter och ta bort eventuella dubletter.
     const existing=Array.isArray(state.freq)?state.freq:[];
+
     const merged=[...existing,...points]
       .sort((a,b)=>a.t-b.t)
       .filter((p,i,a)=>i===0||p.t!==a[i-1].t);
@@ -1010,23 +1075,9 @@ async function frequency(){
     state.freqPeriodMs=ms;
     state.freqEndTime=new Date(latestAt);
 
-    const f=state.freq[state.freq.length-1]?.value;
-    if(!Number.isFinite(f))throw Error('ingen senaste frekvens');
-
-    const at=new Date(latestAt);
-    const dev=f-50;
-
-    $('freq').textContent=fmt(f,2);
-    $('freqMeasureBadge').textContent='SENASTE MÄTNING · '+timeSec(at);
-    $('freqDev').textContent=(dev>=0?'+':'')+fmt(dev,2);
-    $('freqChart').innerHTML=svgSingle(
-      state.freq.map(p=>p.value),
-      49.30,50.70,50,at,ms
-    );
-    addFrequencyHover();
-
     markSync('freq','freqUpdated','Synkad');
     status('freqStatus','LIVE','ok');
+
   }catch(e){
     refreshStatus('freq','freqStatus','Statnett');
     console.warn('Statnett frequency:',e);
@@ -1044,27 +1095,52 @@ setInterval(mfrr,60000);
 setInterval(()=>{mfrrAreaIndex=(mfrrAreaIndex+1)%4;renderMfrrArea()},7000);
 setInterval(frequency,5000);
 
-// Uppdatera frekvensvisningen varje sekund utan nytt API-anrop.
-// Nya mätvärden hämtas av frequency() var 5:e sekund.
+// Visa frekvensen sekund för sekund ur den lokala bufferten.
+// API-data hämtas var 5:e sekund.
+// Dashboarden ligger cirka 3 sekunder efter realtid.
 setInterval(()=>{
   if(!Array.isArray(state.freq)||!state.freq.length)return;
 
-  const last=state.freq[state.freq.length-1];
+  const target=Date.now()-3000;
+
+  let index=-1;
+
+  for(let i=state.freq.length-1;i>=0;i--){
+    if(state.freq[i].t<=target){
+      index=i;
+      break;
+    }
+  }
+
+  if(index<0)return;
+
+  const visible=state.freq.slice(0,index+1);
+  const last=visible[visible.length-1];
+
   if(!last||!Number.isFinite(last.value))return;
+
+  state.freqDisplay=visible;
+  state.freqDisplayTime=new Date(last.t);
 
   const f=last.value;
   const at=new Date(last.t);
   const dev=f-50;
 
   $('freq').textContent=fmt(f,2);
-  $('freqMeasureBadge').textContent='SENASTE MÄTNING · '+timeSec(at);
-  $('freqDev').textContent=(dev>=0?'+':'')+fmt(dev,2);
+  $('freqMeasureBadge').textContent=
+    'SENASTE MÄTNING · '+timeSec(at);
+  $('freqDev').textContent=
+    (dev>=0?'+':'')+fmt(dev,2);
 
   $('freqChart').innerHTML=svgSingle(
-    state.freq.map(p=>p.value),
-    49.30,50.70,50,at,state.freqPeriodMs||1000
+    visible.map(p=>p.value),
+    49.30,
+    50.70,
+    50,
+    at,
+    state.freqPeriodMs||1000
   );
+
   addFrequencyHover();
-},1000);setInterval(()=>{refreshStatus('market','marketStatus','Elprisetjustnu');refreshStatus('system','systemStatus','Statnett');refreshStatus('freq','freqStatus','Statnett')},5000);
-</script>
-</html>
+
+},1000);

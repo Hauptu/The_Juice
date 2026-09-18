@@ -1,5 +1,7 @@
 export async function onRequestGet({ request }) {
   const now = new Date();
+
+  // Hämta de senaste 6 sekunderna från Statnett
   const to = now;
   const from = new Date(now.getTime() - 6000);
 
@@ -24,7 +26,9 @@ export async function onRequestGet({ request }) {
 
     if (!r.ok) {
       return new Response(
-        JSON.stringify({ error: "Statnett HTTP " + r.status }),
+        JSON.stringify({
+          error: "Statnett HTTP " + r.status
+        }),
         {
           status: 502,
           headers: {
@@ -42,6 +46,7 @@ export async function onRequestGet({ request }) {
         "cache-control": "no-store"
       }
     });
+
   } catch (e) {
     return new Response(
       JSON.stringify({
