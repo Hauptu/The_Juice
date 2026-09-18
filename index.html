@@ -1096,12 +1096,12 @@ setInterval(()=>{mfrrAreaIndex=(mfrrAreaIndex+1)%4;renderMfrrArea()},7000);
 setInterval(frequency,5000);
 
 // Visa frekvensen sekund för sekund ur den lokala bufferten.
-// API-data hämtas var 5:e sekund.
+// API-data hämtas var 8:e sekund.
 // Dashboarden ligger cirka 3 sekunder efter realtid.
 setInterval(()=>{
   if(!Array.isArray(state.freq)||!state.freq.length)return;
 
-  const target=Date.now()-3000;
+  const target=Date.now()-8000;
 
   let index=-1;
 
@@ -1112,38 +1112,43 @@ setInterval(()=>{
     }
   }
 
-  if(index<0)return;
+  
+if(index<0)return;
 
-  const visible=state.freq.slice(0,index+1);
-  const last=visible[visible.length-1];
+const visible=state.freq.slice(0,index+1);
+const last=visible[visible.length-1];
 
-  if(!last||!Number.isFinite(last.value))return;
+if(!last||!Number.isFinite(last.value))return;
 
-  state.freqDisplay=visible;
-  state.freqDisplayTime=new Date(last.t);
+state.freqDisplay=visible;
+state.freqDisplayTime=new Date(last.t);
 
-  const f=last.value;
-  const at=new Date(last.t);
-  const dev=f-50;
+const f=last.value;
+const at=new Date(last.t);
+const dev=f-50;
 
-  $('freq').textContent=fmt(f,2);
-  $('freqMeasureBadge').textContent=
-    'SENASTE MÄTNING · '+timeSec(at);
-  $('freqDev').textContent=
-    (dev>=0?'+':'')+fmt(dev,2);
+$('freq').textContent=fmt(f,2);
 
-  $('freqChart').innerHTML=svgSingle(
-    visible.map(p=>p.value),
-    49.30,
-    50.70,
-    50,
-    at,
-    state.freqPeriodMs||1000
-  );
+$('freqMeasureBadge').textContent=
+  'SENASTE MÄTNING · '+timeSec(at);
 
-  addFrequencyHover();
+$('freqDev').textContent=
+  (dev>=0?'+':'')+fmt(dev,2);
+
+$('freqChart').innerHTML=svgSingle(
+  visible.map(p=>p.value),
+  49.30,
+  50.70,
+  50,
+  at,
+  state.freqPeriodMs||1000
+);
+
+addFrequencyHover();
 
 },1000);
+
+
 </script>
 </body>
 </html>
