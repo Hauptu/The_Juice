@@ -1103,48 +1103,59 @@ setInterval(()=>{
 
   const target=Date.now()-8000;
 
-  let index=-1;
+  // Hitta senaste datapunkt som är tillräckligt gammal för visning
+  let availableIndex=-1;
 
   for(let i=state.freq.length-1;i>=0;i--){
     if(state.freq[i].t<=target){
-      index=i;
+      availableIndex=i;
       break;
     }
   }
 
-  
-if(index<0)return;
+  if(availableIndex<0)return;
 
-const visible=state.freq.slice(0,index+1);
-const last=visible[visible.length-1];
+  // Initiera visningspositionen första gången
+  if(!Number.isInteger(state.freqDisplayIndex)){
+    state.freqDisplayIndex=availableIndex;
+  }
 
-if(!last||!Number.isFinite(last.value))return;
+  // Gå fram exakt en faktisk sekund åt gången
+  if(state.freqDisplayIndex<availableIndex){
+    state.freqDisplayIndex++;
+  }
 
-state.freqDisplay=visible;
-state.freqDisplayTime=new Date(last.t);
+  const index=state.freqDisplayIndex;
+  const visible=state.freq.slice(0,index+1);
+  const last=visible[visible.length-1];
 
-const f=last.value;
-const at=new Date(last.t);
-const dev=f-50;
+  if(!last||!Number.isFinite(last.value))return;
 
-$('freq').textContent=fmt(f,2);
+  state.freqDisplay=visible;
+  state.freqDisplayTime=new Date(last.t);
 
-$('freqMeasureBadge').textContent=
-  'SENASTE MÄTNING · '+timeSec(at);
+  const f=last.value;
+  const at=new Date(last.t);
+  const dev=f-50;
 
-$('freqDev').textContent=
-  (dev>=0?'+':'')+fmt(dev,2);
+  $('freq').textContent=fmt(f,2);
 
-$('freqChart').innerHTML=svgSingle(
-  visible.map(p=>p.value),
-  49.30,
-  50.70,
-  50,
-  at,
-  state.freqPeriodMs||1000
-);
+  $('freqMeasureBadge').textContent=
+    'SENASTE MÄTNING · '+timeSec(at);
 
-addFrequencyHover();
+  $('freqDev').textContent=
+    (dev>=0?'+':'')+fmt(dev,2);
+
+  $('freqChart').innerHTML=svgSingle(
+    visible.map(p=>p.value),
+    49.30,
+    50.70,
+    50,
+    at,
+    state.freqPeriodMs||1000
+  );
+
+  addFrequencyHover();
 
 },1000);
 
