@@ -974,34 +974,97 @@ async function frequency(){
   if(freqBusy)return;
   freqBusy=true; attempted.freq=true;
   try{
-    const d=await getJson('/api/statnett/frequency',8000);
-    const ms=Number(d.PeriodTickMs||1000),start=Number(d.StartPointUTC),vals=Array.isArray(d.Measurements)?d.Measurements.map(Number).filter(Number.isFinite):[];
+    const now=Date.now();
+    const from=new Date(now-6000);
+    const to=new Date(now);
+
+    const iso=d=>d.toISOString().replace(/\.\d{3}Z$/,'Z');
+
+    const url='/api/statnett/frequency'
+      +`?from=${encodeURIComponent(iso(from))}&to=${encodeURIComponent(iso(to))}`;
+
+    const d=await getJson(url,8000);
+
+    const ms=Number(d.PeriodTickMs||1000);
+    const start=Number(d.StartPointUTC);
+    const vals=Array.isArray(d.Measurements)
+      ?d.Measurements.map(Number).filter(Number.isFinite):[];
+
     if(!vals.length)throw Error('inga frekvensmätningar');
-    const windowMs=30*60*1000;
-    const latestAt=new Date(start+(vals.length-1)*ms);
-    const cutoff=latestAt.getTime()-windowMs;
-    const startIndex=Math.max(0, Math.floor((cutoff-start)/ms));
-    const take=vals.slice(startIndex);
-    state.freq=take;
-    const f=take[take.length-1],at=new Date(start+(vals.length-1)*ms),dev=f-50;
+
+    const points=vals.map((value,i)=>({
+      t:start+i*ms,
+      value
+    }));
+
+    // Lägg till nya datapunkter och ta bort eventuella dubletter.
+    const existing=Array.isArray(state.freq)?state.freq:[];
+    const merged=[...existing,...points]
+      .sort((a,b)=>a.t-b.t)
+      .filter((p,i,a)=>i===0||p.t!==a[i-1].t);
+
+    const latestAt=merged[merged.length-1].t;
+    const cutoff=latestAt-30*60*1000;
+
+    state.freq=merged.filter(p=>p.t>=cutoff);
+    state.freqPeriodMs=ms;
+    state.freqEndTime=new Date(latestAt);
+
+    const f=state.freq[state.freq.length-1]?.value;
+    if(!Number.isFinite(f))throw Error('ingen senaste frekvens');
+
+    const at=new Date(latestAt);
+    const dev=f-50;
+
     $('freq').textContent=fmt(f,2);
     $('freqMeasureBadge').textContent='SENASTE MÄTNING · '+timeSec(at);
     $('freqDev').textContent=(dev>=0?'+':'')+fmt(dev,2);
-    state.freqPeriodMs=ms;
-    state.freqEndTime=at;
-    $('freqChart').innerHTML=svgSingle(take,49.30,50.70,50,at,ms);
+    $('freqChart').innerHTML=svgSingle(
+      state.freq.map(p=>p.value),
+      49.30,50.70,50,at,ms
+    );
     addFrequencyHover();
+
     markSync('freq','freqUpdated','Synkad');
     status('freqStatus','LIVE','ok');
   }catch(e){
     refreshStatus('freq','freqStatus','Statnett');
     console.warn('Statnett frequency:',e);
-  }finally{freqBusy=false;}
+  }finally{
+    freqBusy=false;
+  }
 }
 
 function swedishDateTimeShort(d=new Date()){const days=['Sön.','Mån.','Tis.','Ons.','Tor.','Fre.','Lör.'];const months=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];const dd=String(d.getDate()).padStart(2,'0');return `${days[d.getDay()]} ${dd} ${months[d.getMonth()]}`}
 function swedishDateTime(d=new Date()){const days=['Sön.','Mån.','Tis.','Ons.','Tor.','Fre.','Lör.'];const months=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];const dd=String(d.getDate()).padStart(2,'0');const hh=String(d.getHours()).padStart(2,'0');const mm=String(d.getMinutes()).padStart(2,'0');const ss=String(d.getSeconds()).padStart(2,'0');return `${days[d.getDay()]} ${dd} ${months[d.getMonth()]} ${hh}:${mm}:${ss}`}
 function clock(){const d=new Date();$('clockDate').textContent=swedishDateTimeShort(d);$('clockMain').textContent=d.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}
-clock();setInterval(clock,1000);prices();mfrr();frequency();setInterval(prices,900000);setInterval(mfrr,60000);setInterval(()=>{mfrrAreaIndex=(mfrrAreaIndex+1)%4;renderMfrrArea()},7000);setInterval(frequency,2000);setInterval(()=>{refreshStatus('market','marketStatus','Elprisetjustnu');refreshStatus('system','systemStatus','Statnett');refreshStatus('freq','freqStatus','Statnett')},5000);
+clock();setInterval(clock,1000);prices();mfrr();frequency();
+setInterval(prices,900000);
+setInterval(mfrr,60000);
+setInterval(()=>{mfrrAreaIndex=(mfrrAreaIndex+1)%4;renderMfrrArea()},7000);
+setInterval(frequency,5000);
+
+// Uppdatera frekvensvisningen varje sekund utan nytt API-anrop.
+// Nya mätvärden hämtas av frequency() var 5:e sekund.
+setInterval(()=>{
+  if(!Array.isArray(state.freq)||!state.freq.length)return;
+
+  const last=state.freq[state.freq.length-1];
+  if(!last||!Number.isFinite(last.value))return;
+
+  const f=last.value;
+  const at=new Date(last.t);
+  const dev=f-50;
+
+  $('freq').textContent=fmt(f,2);
+  $('freqMeasureBadge').textContent='SENASTE MÄTNING · '+timeSec(at);
+  $('freqDev').textContent=(dev>=0?'+':'')+fmt(dev,2);
+
+  $('freqChart').innerHTML=svgSingle(
+    state.freq.map(p=>p.value),
+    49.30,50.70,50,at,state.freqPeriodMs||1000
+  );
+  addFrequencyHover();
+},1000);setInterval(()=>{refreshStatus('market','marketStatus','Elprisetjustnu');refreshStatus('system','systemStatus','Statnett');refreshStatus('freq','freqStatus','Statnett')},5000);
 </script>
 </html>
