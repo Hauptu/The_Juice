@@ -400,7 +400,19 @@ h2,
 
 
 const $=id=>document.getElementById(id), A=['SE1','SE2','SE3','SE4'];
-const state={prices:{},systemHistory:[],freq:[],sync:{market:0,system:0,freq:0},marketLastSuccess:0};
+
+const state={
+  prices:{},
+  systemHistory:[],
+  freq:[],
+  freqDisplay:[],
+  freqDisplayTimeMs:null,
+  freqDisplayTime:null,
+  freqPeriodMs:1000,
+  sync:{market:0,system:0,freq:0},
+  marketLastSuccess:0
+};
+
 const SYNC_MAX={market:1200000,system:1200000,freq:20000};
 const attempted={market:false,system:false,freq:false};
 let systemFailCount=0,systemLastAttempt=0;
@@ -430,47 +442,226 @@ function refreshStatus(key,id,source){
     status(id,'Hämtar…','loading','Väntar på första hämtningen.');
   }
 }
-function svgSingle(values,min,max,ref=null,endTime=null,periodMs=1000){
-  if(!Array.isArray(values)||!values.length)return '<div class="muted small">Ingen frekvensdata ännu</div>';
+
+
+
+function svgSingle(points,min,max,ref=null,endTime=null,periodMs=1000){
+  if(!Array.isArray(points)||!points.length){
+    return '<div class="muted small">Ingen frekvensdata ännu</div>';
+  }
+
   const w=760,h=260,pL=48,pR=12,pT=12,pB=24;
-  const zMin=49.40,zMax=50.60;
-  const plotW=w-pL-pR, plotH=h-pT-pB;
-  const y=v=>pT+(zMax-v)/(zMax-zMin)*plotH;
-  const x=i=>pL+i*plotW/Math.max(1,values.length-1);
-  const zone=(lo,hi,fill,op)=>`<rect x="${pL}" y="${y(hi)}" width="${plotW}" height="${Math.max(0,y(lo)-y(hi))}" fill="${fill}" opacity="${op}"/>`;
-  const zones =
+  const plotW=w-pL-pR,plotH=h-pT-pB;
+
+  // Endast giltiga, tidsstämplade mätpunkter.
+  const pts=points.filter(p =>
+    p &&
+    Number.isFinite(p.t) &&
+    Number.isFinite(p.value)
+  );
+
+  if(!pts.length){
+    return '<div class="muted small">Ingen frekvensdata ännu</div>';
+  }
+
+  // Grafen visar alltid exakt 30 minuter.
+  const displayEnd=Number.isFinite(endTime?.getTime())
+    ?endTime.getTime()
+    :pts[pts.length-1].t;
+
+  const displayStart=displayEnd-30*60*1000;
+
+  const shown=pts.filter(p =>
+    p.t>=displayStart &&
+    p.t<=displayEnd
+  );
+
+  if(!shown.length){
+    return '<div class="muted small">Ingen frekvensdata i tidsfönstret</div>';
+  }
+
+  // Dynamisk y-axel:
+  // största absoluta avvikelsen från 50 Hz under de visade 30 minuterna
+  // + 0,10 Hz marginal.
+  const maxDev=Math.max(
+    0.10,
+    ...shown.map(p=>Math.abs(p.value-50))
+  );
+
+  const range=maxDev+0.10;
+  const zMin=50-range;
+  const zMax=50+range;
+
+  const y=v =>
+    pT+(zMax-v)/(zMax-zMin)*plotH;
+
+  const x=t =>
+    pL+(t-displayStart)/(displayEnd-displayStart)*plotW;
+
+  const zone=(lo,hi,fill,op)=>{
+    const top=Math.max(zMin,hi);
+    const bottom=Math.min(zMax,lo);
+
+    if(bottom<=top)return '';
+
+    return `<rect
+      x="${pL}"
+      y="${y(top)}"
+      width="${plotW}"
+      height="${y(bottom)-y(top)}"
+      fill="${fill}"
+      opacity="${op}"
+    />`;
+  };
+
+  const zones=
     zone(49.40,49.50,'#ee801c',0.18)+
     zone(49.50,49.90,'#e5ac00',0.13)+
     zone(49.90,50.10,'#285f2e',0.20)+
     zone(50.10,50.50,'#e5ac00',0.13)+
     zone(50.50,50.60,'#ee801c',0.18);
-  const boundary=[49.50,49.90,50.10,50.50].map(v=>{
-    const yy=y(v);return `<line class="freq-boundary" x1="${pL}" y1="${yy}" x2="${w-pR}" y2="${yy}"/>`;
+
+  const boundaries=[49.50,49.90,50.10,50.50]
+    .filter(v=>v>zMin&&v<zMax)
+    .map(v=>{
+      const yy=y(v);
+      return `<line
+        class="freq-boundary"
+        x1="${pL}" y1="${yy}"
+        x2="${w-pR}" y2="${yy}"
+      />`;
+    }).join('');
+
+  const optimumY=y(50);
+
+  const optimum=
+    `<line
+      class="freq-optimum"
+      x1="${pL}" y1="${optimumY}"
+      x2="${w-pR}" y2="${optimumY}"
+    />`;
+
+  // Y-axel: visa 50 Hz samt relevanta zon-gränser.
+  const axisValues=[
+    zMin,
+    49.50,
+    49.90,
+    50.00,
+    50.10,
+    50.50,
+    zMax
+  ];
+
+  const axis=[...new Set(
+    axisValues
+      .filter(v=>v>=zMin&&v<=zMax)
+      .map(v=>Number(v.toFixed(3)))
+  )].sort((a,b)=>a-b);
+
+  const axisHtml=axis.map(v=>{
+    const yy=y(v);
+    const cls=Math.abs(v-50)<0.0005
+      ?'freq-zone-axis-opt'
+      :'freq-zone-axis';
+
+    return `<text
+      x="${pL-7}"
+      y="${yy+4}"
+      text-anchor="end"
+      class="${cls}"
+    >${v.toFixed(2).replace('.',',')}</text>`;
   }).join('');
-  const optimumY=y(50.00);
-  const optimum=`<line class="freq-optimum" x1="${pL}" y1="${optimumY}" x2="${w-pR}" y2="${optimumY}"/>`;
-  const axis=[49.50,49.90,50.00,50.10,50.50].map(v=>{
-    const yy=y(v);const cls=v===50 ? 'freq-zone-axis-opt' : 'freq-zone-axis';return `<text x="${pL-7}" y="${yy+4}" text-anchor="end" class="${cls}">${v.toFixed(2).replace('.',',')}</text>`;
-  }).join('');
-  const pts=values.map((v,i)=>`${x(i)},${y(v)}`).join(' ');
-  const line=`<polyline points="${pts}" fill="none" class="freq-trace" stroke-linejoin="round" stroke-linecap="round"/>`;
-  const spanMs=Math.min((values.length-1)*periodMs,30*60*1000);
+
+  // Linjen använder den verkliga tidsstämpeln för varje mätpunkt.
+  let path='';
+
+  shown.forEach((p,i)=>{
+    const cmd=i===0?'M':'L';
+    path+=`${cmd} ${x(p.t)} ${y(p.value)} `;
+  });
+
+  const line=
+    `<path
+      d="${path}"
+      fill="none"
+      class="freq-trace"
+      stroke-linejoin="round"
+      stroke-linecap="round"
+    />`;
+
+  // Tidsaxel: alltid 30 minuter, markering var 5:e minut.
   const ticks=[];
-  const endMs=endTime?endTime.getTime():Date.now();
-  const rawStartMs=endMs-spanMs;
   const step=5*60*1000;
-  const firstTickMs=Math.ceil(rawStartMs/step)*step;
-  const lastTickMs=Math.floor(endMs/step)*step;
-  for(let tickMs=firstTickMs;tickMs<=lastTickMs;tickMs+=step){
-    const ratio=spanMs>0?(tickMs-rawStartMs)/spanMs:0;
-    const xx=pL+Math.max(0,Math.min(1,ratio))*plotW;
+
+  const firstTick=Math.ceil(displayStart/step)*step;
+  const lastTick=Math.floor(displayEnd/step)*step;
+
+  for(
+    let tickMs=firstTick;
+    tickMs<=lastTick;
+    tickMs+=step
+  ){
+    const xx=x(tickMs);
     const dt=new Date(tickMs);
-    const label=String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0');
-    const first=tickMs===firstTickMs,last=tickMs===lastTickMs;
-    ticks.push(`<text x="${xx}" y="${h-5}" text-anchor="${first?'start':last?'end':'middle'}" class="freq-x-axis">${label}</text>`);
+
+    const label=
+      String(dt.getHours()).padStart(2,'0')+
+      ':'+
+      String(dt.getMinutes()).padStart(2,'0');
+
+    const first=tickMs===firstTick;
+    const last=tickMs===lastTick;
+
+    ticks.push(
+      `<line
+        x1="${xx}"
+        y1="${h-pB}"
+        x2="${xx}"
+        y2="${h-pB+4}"
+        class="xtick"
+      />`+
+      `<text
+        x="${xx}"
+        y="${h-5}"
+        text-anchor="${first?'start':last?'end':'middle'}"
+        class="freq-x-axis"
+      >${label}</text>`
+    );
   }
-  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" class="freq-svg">${zones}${boundary}${optimum}${axis}${line}${ticks.join('')}<g class="freq-hover" visibility="hidden"><line class="freq-hover-line" x1="${pL}" y1="${pT}" x2="${pL}" y2="${h-pB}"/><circle class="freq-hover-dot" cx="${pL}" cy="${y(values[0])}" r="4"/></g></svg>`;
+
+  return `<svg
+    viewBox="0 0 ${w} ${h}"
+    preserveAspectRatio="none"
+    class="freq-svg"
+  >
+    ${zones}
+    ${boundaries}
+    ${optimum}
+    ${axisHtml}
+    ${line}
+    ${ticks.join('')}
+    <g
+      class="freq-hover"
+      visibility="hidden"
+    >
+      <line
+        class="freq-hover-line"
+        x1="${pL}" y1="${pT}"
+        x2="${pL}" y2="${h-pB}"
+      />
+      <circle
+        class="freq-hover-dot"
+        cx="${pL}"
+        cy="${y(shown[0].value)}"
+        r="4"
+      />
+    </g>
+  </svg>`;
 }
+
+
+
+
 
 function addFrequencyHover(){
   const chart=$('freqChart');
@@ -1096,14 +1287,14 @@ setInterval(()=>{mfrrAreaIndex=(mfrrAreaIndex+1)%4;renderMfrrArea()},7000);
 setInterval(frequency,5000);
 
 // Visa frekvensen sekund för sekund ur den lokala bufferten.
-// API-data hämtas var 8:e sekund.
-// Dashboarden ligger cirka 3 sekunder efter realtid.
+// API-data hämtas var 5:e sekund.
+// Displayen använder verkliga mätpunkter och ligger ca 8 sekunder efter realtid.
 setInterval(()=>{
   if(!Array.isArray(state.freq)||!state.freq.length)return;
 
   const target=Date.now()-8000;
 
-  // Hitta senaste datapunkt som är tillräckligt gammal för visning
+  // Hitta den senaste punkt som är tillgänglig för visning.
   let availableIndex=-1;
 
   for(let i=state.freq.length-1;i>=0;i--){
@@ -1115,39 +1306,62 @@ setInterval(()=>{
 
   if(availableIndex<0)return;
 
-  // Initiera visningspositionen första gången
-  if(!Number.isInteger(state.freqDisplayIndex)){
-    state.freqDisplayIndex=availableIndex;
+  /*
+   * Första gången startar vi på den punkt som ligger 8 sekunder
+   * bakom realtid.
+   */
+  if(!Number.isInteger(state.freqDisplayTimeMs)){
+    state.freqDisplayTimeMs=state.freq[availableIndex].t;
   }
 
-  // Gå fram exakt en faktisk sekund åt gången
-  if(state.freqDisplayIndex<availableIndex){
-    state.freqDisplayIndex++;
+  /*
+   * Flytta exakt en faktisk datapunkt framåt per sekund.
+   *
+   * Vi letar efter nästa punkt i bufferten i stället för att
+   * använda array-index. Då spelar det ingen roll om gamla
+   * punkter samtidigt rensas bort när 30-minutersfönstret flyttas.
+   */
+  let next=null;
+
+  for(const p of state.freq){
+    if(p.t>state.freqDisplayTimeMs){
+      next=p;
+      break;
+    }
   }
 
-  const index=state.freqDisplayIndex;
-  const visible=state.freq.slice(0,index+1);
+  if(next && next.t<=target){
+    state.freqDisplayTimeMs=next.t;
+  }
+
+  const displayTime=state.freqDisplayTimeMs;
+
+  const visible=state.freq.filter(p =>
+    p.t<=displayTime
+  );
+
   const last=visible[visible.length-1];
 
   if(!last||!Number.isFinite(last.value))return;
 
   state.freqDisplay=visible;
-  state.freqDisplayTime=new Date(last.t);
+  state.freqDisplayTime=new Date(displayTime);
 
   const f=last.value;
-  const at=new Date(last.t);
+  const at=new Date(displayTime);
   const dev=f-50;
 
-  $('freq').textContent=fmt(f,2);
+  // 3 decimaler gör det lättare att se varje sekunds förändring.
+  $('freq').textContent=fmt(f,3);
 
   $('freqMeasureBadge').textContent=
     'SENASTE MÄTNING · '+timeSec(at);
 
   $('freqDev').textContent=
-    (dev>=0?'+':'')+fmt(dev,2);
+    (dev>=0?'+':'')+fmt(dev,3);
 
   $('freqChart').innerHTML=svgSingle(
-    visible.map(p=>p.value),
+    visible,
     49.30,
     50.70,
     50,
