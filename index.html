@@ -597,14 +597,15 @@ function svgSingle(values,min,max,ref=null,endTime=null,periodMs=1000){
 
   const plotPoints=[];
   const plotStep=3000;
-  let nextPlotTime=visiblePoints[0].t;
+  const firstPlotTime=Math.ceil(visiblePoints[0].t/plotStep)*plotStep;
   for(const p of visiblePoints){
-    if(p.t>=nextPlotTime){
+    if(p.t>=firstPlotTime && (p.t-firstPlotTime)%plotStep===0){
       plotPoints.push(p);
-      nextPlotTime=p.t+plotStep;
     }
   }
+  const firstVisible=visiblePoints[0];
   const lastVisible=visiblePoints[visiblePoints.length-1];
+  if(firstVisible && plotPoints[0]?.t!==firstVisible.t)plotPoints.unshift(firstVisible);
   if(lastVisible && plotPoints[plotPoints.length-1]?.t!==lastVisible.t)plotPoints.push(lastVisible);
 
   const pts=plotPoints.map(p=>`${x(p.t)},${y(p.value)}`).join(' ');
