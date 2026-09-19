@@ -595,7 +595,19 @@ function svgSingle(values,min,max,ref=null,endTime=null,periodMs=1000){
     return `<text x="${pL-7}" y="${yy+4}" text-anchor="end" class="${cls}">${v.toFixed(2).replace('.',',')}</text>`;
   }).join('');
 
-  const pts=visiblePoints.map(p=>`${x(p.t)},${y(p.value)}`).join(' ');
+  const plotPoints=[];
+  const plotStep=3000;
+  let nextPlotTime=visiblePoints[0].t;
+  for(const p of visiblePoints){
+    if(p.t>=nextPlotTime){
+      plotPoints.push(p);
+      nextPlotTime=p.t+plotStep;
+    }
+  }
+  const lastVisible=visiblePoints[visiblePoints.length-1];
+  if(lastVisible && plotPoints[plotPoints.length-1]?.t!==lastVisible.t)plotPoints.push(lastVisible);
+
+  const pts=plotPoints.map(p=>`${x(p.t)},${y(p.value)}`).join(' ');
   const line=`<polyline points="${pts}" fill="none" class="freq-trace" stroke-linejoin="round" stroke-linecap="round"/>`;
 
   // Fast, stable 5-minute ticks across the full rolling 30-minute window.
@@ -1211,7 +1223,9 @@ async function frequency(){
 
   try{
     const now=Date.now();
-    const from=new Date(now-6000);
+    const initialLoad=!Array.isArray(state.freq)||!state.freq.length;
+    const lookbackMs=initialLoad?30*60*1000:6000;
+    const from=new Date(now-lookbackMs);
     const to=new Date(now);
 
     const iso=d=>d.toISOString().slice(0,19)+'Z';
