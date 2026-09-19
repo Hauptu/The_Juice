@@ -345,6 +345,107 @@ h2,
 .mfrr-tooltip .mtt-label.up{color:#ee801c}
 .mfrr-tooltip .mtt-label.down{color:#4f9f55}
 .mfrr-tooltip .mtt-val{font-weight:700}
+
+/* ---------- mobile layout: desktop above 700px is unchanged ---------- */
+@media(max-width:700px){
+  html,body{
+    width:100%;
+    min-height:100%;
+    height:auto;
+    overflow-x:hidden;
+    overflow-y:auto;
+  }
+
+  #app{
+    width:100%;
+    min-height:100vh;
+    height:auto;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    padding:8px;
+  }
+
+  .panel{
+    width:100%;
+    min-width:0;
+    min-height:0;
+    height:auto;
+    flex:0 0 auto;
+    overflow:hidden;
+    padding:13px 13px 20px;
+  }
+
+  .head{
+    gap:8px;
+    padding-bottom:10px;
+  }
+
+  h2{font-size:15px}
+  .badge{font-size:9px;padding:5px 9px 5px 8px}
+
+  .content{
+    padding-top:10px;
+    gap:8px;
+  }
+
+  .grid4,
+  .mfrr-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:7px;
+  }
+
+  #areaCards .card{padding:10px}
+  .price{font-size:18px}
+
+  .chart{
+    flex:none;
+    min-height:0;
+    height:260px;
+    padding:6px;
+  }
+
+  #market .chart,
+  #balance .chart{height:260px}
+
+  #physical .content{
+    height:280px;
+    min-height:280px;
+  }
+
+  .clock-date{font-size:14px}
+  .clock-time{font-size:52px;margin-top:8px}
+
+  .mfrr-head-right{
+    gap:5px;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+  }
+
+  .mfrr-kpi-note{
+    font-size:7.5px;
+    padding:3px 7px;
+  }
+
+  .mfrr-kpi-note strong{font-size:8.5px}
+
+  .mfrr-card{
+    height:auto;
+    min-height:72px;
+    padding:10px;
+  }
+
+  .mfrr-row b{font-size:18px}
+  .mfrr-row small{font-size:8px}
+
+  .mfrr-chart-card{
+    min-height:300px;
+  }
+
+  .mfrr-chart-card .chart{
+    height:220px;
+  }
+}
 </style>
 </head>
 <body>
