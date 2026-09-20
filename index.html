@@ -1296,43 +1296,61 @@ setInterval(()=>{mfrrAreaIndex=(mfrrAreaIndex+1)%4;renderMfrrArea()},7000);
 setInterval(frequency,5000);
 
 // Visa frekvensen sekund för sekund ur den lokala bufferten.
-// API-data hämtas var 8:e sekund.
-// Dashboarden ligger cirka 3 sekunder efter realtid.
+// API-data hämtas var 5:e sekund och varje svar innehåller 1-sekundspunkter.
+// Displaypositionen styrs av timestamp, inte array-index, så en ny hämtning
+// som trimmar bufferten kan inte få graf/KPI att hoppa 5 sekunder.
+// Dashboarden ligger cirka 8 sekunder efter realtid.
 setInterval(()=>{
   if(!Array.isArray(state.freq)||!state.freq.length)return;
 
   const target=Date.now()-8000;
+  const periodMs=Number(state.freqPeriodMs||1000);
 
-  // Hitta senaste datapunkt som är tillräckligt gammal för visning
-  let availableIndex=-1;
+  // Första gången: börja vid senaste tillgängliga punkt som ligger
+  // minst 8 sekunder efter realtid.
+  if(!Number.isFinite(state.freqDisplayTime?.getTime())){
+    let initial=null;
 
-  for(let i=state.freq.length-1;i>=0;i--){
-    if(state.freq[i].t<=target){
-      availableIndex=i;
-      break;
+    for(let i=state.freq.length-1;i>=0;i--){
+      if(state.freq[i].t<=target){
+        initial=state.freq[i];
+        break;
+      }
     }
+
+    if(!initial)return;
+    state.freqDisplayTime=new Date(initial.t);
+  }else{
+    // Flytta exakt en faktisk datapunkt framåt per sekund.
+    // Vi letar på timestamp, inte på array-index, eftersom state.freq
+    // kan ha fått nya data och samtidigt trimmats i andra änden.
+    const currentMs=state.freqDisplayTime.getTime();
+    const nextTarget=currentMs+periodMs;
+
+    const next=state.freq.find(p =>
+      Number.isFinite(p.t) &&
+      p.t>=nextTarget &&
+      p.t<=target &&
+      Number.isFinite(p.value)
+    );
+
+    if(!next)return;
+
+    state.freqDisplayTime=new Date(next.t);
   }
 
-  if(availableIndex<0)return;
+  const displayMs=state.freqDisplayTime.getTime();
 
-  // Initiera visningspositionen första gången
-  if(!Number.isInteger(state.freqDisplayIndex)){
-    state.freqDisplayIndex=availableIndex;
-  }
+  const visible=state.freq.filter(p =>
+    p &&
+    Number.isFinite(p.t) &&
+    p.t<=displayMs &&
+    Number.isFinite(p.value)
+  );
 
-  // Gå fram exakt en faktisk sekund åt gången
-  if(state.freqDisplayIndex<availableIndex){
-    state.freqDisplayIndex++;
-  }
-
-  const index=state.freqDisplayIndex;
-  const visible=state.freq.slice(0,index+1);
   const last=visible[visible.length-1];
 
-  if(!last||!Number.isFinite(last.value))return;
-
-  state.freqDisplay=visible;
-  state.freqDisplayTime=new Date(last.t);
+  if(!last)return;
 
   const f=last.value;
   const at=new Date(last.t);
@@ -1349,8 +1367,10 @@ setInterval(()=>{
     50.70,
     50,
     at,
-    state.freqPeriodMs||1000
+    periodMs
   );
+
+  state.freqDisplay=visible;
 
   addFrequencyHover();
 
