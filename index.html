@@ -862,7 +862,11 @@ function attachPriceHover(){
 function renderPrices(){
   const cur=A.map(a=>{const e=parseEntries(a),i=nextIdx(e);return {a,e,i,x:e[i]}});
   $('areaCards').innerHTML=cur.map(o=>`<div class="card"><div class="label">${o.a}</div><div class="price ${o.x?.v<0?'down':'up'}">${o.x?fmt(o.x.v):'—'}<span class="unit">SEK/MWh</span></div><div class="time">${o.x?time(o.x.start)+'–'+time(o.x.end):'—'}</div></div>`).join('');
-  $('priceWindowTitle').textContent=`Day-ahead · ${fmt0(Math.max(0,Math.round((Math.max(...cur.map(o=>o.e.at(-1)?.end?new Date(o.e.at(-1).end).getTime():0))-Date.now())/3600000)))} h framåt · SE1–SE4`;
+  const priceWindowTitle=$('priceWindowTitle');
+  if(priceWindowTitle){
+    const hours=fmt0(Math.max(0,Math.round((Math.max(...cur.map(o=>o.e.at(-1)?.end?new Date(o.e.at(-1).end).getTime():0))-Date.now())/3600000)));
+    priceWindowTitle.firstChild.textContent=`Day-ahead · ${hours} h framåt · `;
+  }
   const chart=rollingPriceChart();
   $('priceChart').innerHTML=chart;
   attachPriceHover();
