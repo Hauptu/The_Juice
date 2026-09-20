@@ -595,18 +595,10 @@ function svgSingle(values,min,max,ref=null,endTime=null,periodMs=1000){
     return `<text x="${pL-7}" y="${yy+4}" text-anchor="end" class="${cls}">${v.toFixed(2).replace('.',',')}</text>`;
   }).join('');
 
-  const plotPoints=[];
-  const plotStep=3000;
-  const firstPlotTime=Math.ceil(visiblePoints[0].t/plotStep)*plotStep;
-  for(const p of visiblePoints){
-    if(p.t>=firstPlotTime && (p.t-firstPlotTime)%plotStep===0){
-      plotPoints.push(p);
-    }
-  }
-  const firstVisible=visiblePoints[0];
-  const lastVisible=visiblePoints[visiblePoints.length-1];
-  if(firstVisible && plotPoints[0]?.t!==firstVisible.t)plotPoints.unshift(firstVisible);
-  if(lastVisible && plotPoints[plotPoints.length-1]?.t!==lastVisible.t)plotPoints.push(lastVisible);
+  // Rita alla tillgängliga 1-sekundspunkter.
+  // Rådata och visualisering har därmed samma upplösning, så snabba toppar
+  // och dalar inte kan försvinna bara på grund av visualiseringssampling.
+  const plotPoints=visiblePoints;
 
   const pts=plotPoints.map(p=>`${x(p.t)},${y(p.value)}`).join(' ');
   const line=`<polyline points="${pts}" fill="none" class="freq-trace" stroke-linejoin="round" stroke-linecap="round"/>`;
