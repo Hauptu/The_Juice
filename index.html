@@ -625,8 +625,7 @@ function svgSingle(values,min,max,ref=null,endTime=null,periodMs=1000){
 
 function addFrequencyHover(){
   const chart=$('freqChart');
-  const svg=chart?.querySelector('svg');
-  if(!chart||!svg||!Array.isArray(state.freq)||!state.freq.length)return;
+  if(!chart||!Array.isArray(state.freq)||!state.freq.length)return;
 
   chart.querySelector('.freq-tooltip')?.remove();
 
@@ -634,118 +633,115 @@ function addFrequencyHover(){
   tip.className='freq-tooltip';
   chart.appendChild(tip);
 
-  const hover=svg.querySelector('.freq-hover');
-  const line=svg.querySelector('.freq-hover-line');
-  const dot=svg.querySelector('.freq-hover-dot');
+  const renderHover=(clientX,clientY)=>{
+    const svg=chart.querySelector('svg');
+    if(!svg)return;
 
-  if(!hover||!line||!dot)return;
+    const hover=svg.querySelector('.freq-hover');
+    const line=svg.querySelector('.freq-hover-line');
+    const dot=svg.querySelector('.freq-hover-dot');
+    if(!hover||!line||!dot)return;
 
-  const values=Array.isArray(state.freqDisplay)
-  ?state.freqDisplay
-  :state.freq;
-  const ms=Number(state.freqPeriodMs||1000);
+    const values=Array.isArray(state.freqDisplay)
+      ?state.freqDisplay
+      :state.freq;
+    const ms=Number(state.freqPeriodMs||1000);
 
-  const points=values.filter(p =>
-    p &&
-    Number.isFinite(p.t) &&
-    Number.isFinite(p.value)
-  );
+    const points=values.filter(p =>
+      p &&
+      Number.isFinite(p.t) &&
+      Number.isFinite(p.value)
+    );
+    if(!points.length)return;
 
-  if(!points.length)return;
+    const w=760,h=260,pL=48,pR=12,pT=12,pB=24;
+    const plotW=w-pL-pR;
+    const plotH=h-pT-pB;
 
-  const w=760,h=260,pL=48,pR=12,pT=12,pB=24;
-  const plotW=w-pL-pR;
-  const plotH=h-pT-pB;
+    const maxDev=Math.max(0.02,...points.map(p=>Math.abs(p.value-50)).filter(Number.isFinite));
+    const range=Math.max(0.15,maxDev+0.03);
+    const zMin=50-range;
+    const zMax=50+range;
+    const y=v=>pT+(zMax-v)/(zMax-zMin)*plotH;
 
-  const maxDev=Math.max(0.02,...points.map(p=>Math.abs(p.value-50)).filter(Number.isFinite));
-  const range=Math.max(0.15,maxDev+0.03);
-  const zMin=50-range;
-  const zMax=50+range;
+    // Exakt samma tidsbas som svgSingle().
+    const endMs=points[points.length-1].t;
+    const startMs=endMs-30*60*1000;
+    const x=t=>pL+(t-startMs)/(30*60*1000)*plotW;
 
-  const y=v=>pT+(zMax-v)/(zMax-zMin)*plotH;
-
-  // Hover ska använda exakt samma tidsbas som själva grafen.
-  // Grafens X-axel visar alltid ett rullande 30-minutersfönster.
-  const endMs=points[points.length-1].t;
-  const startMs=endMs-30*60*1000;
-  const x=t=>pL+(t-startMs)/(30*60*1000)*plotW;
-
-  const fmtTime=d=>d.toLocaleTimeString('sv-SE',{
-    hour:'2-digit',
-    minute:'2-digit',
-    second:'2-digit'
-  });
-
-  const update=e=>{
     const r=svg.getBoundingClientRect();
     if(!r.width||!r.height)return;
 
-    const localX=Math.max(0,Math.min(r.width,e.clientX-r.left));
+    const localX=Math.max(0,Math.min(r.width,clientX-r.left));
     const ratio=localX/r.width;
-
-    const plotRatio=Math.max(
-      0,
-      Math.min(1,(ratio-(pL/w))/(plotW/w))
-    );
-
+    const plotRatio=Math.max(0,Math.min(1,(ratio-(pL/w))/(plotW/w)));
     const hoverTime=startMs+plotRatio*(endMs-startMs);
 
-    // Välj närmaste faktiska 1-sekundsdatapunkt.
-    const i=Math.max(0,Math.min(points.length-1,
+    // Välj närmaste faktiska 1-sekundsmätning.
+    const approx=Math.max(0,Math.min(points.length-1,
       Math.round((hoverTime-points[0].t)/ms)
     ));
-
-    let point=points[i];
+    let point=points[approx];
     if(!point)return;
 
-    // Om det finns en liten lucka i datan: välj faktiskt närmaste punkt.
-    const prev=points[i-1];
-    const next=points[i+1];
+    const prev=points[approx-1];
+    const next=points[approx+1];
     if(prev && Math.abs(prev.t-hoverTime)<Math.abs(point.t-hoverTime))point=prev;
     if(next && Math.abs(next.t-hoverTime)<Math.abs(point.t-hoverTime))point=next;
 
-    const v=point.value;
     const xx=x(point.t);
-    const yy=y(v);
+    const yy=y(point.value);
 
     line.setAttribute('x1',xx);
     line.setAttribute('x2',xx);
-
     dot.setAttribute('cx',xx);
     dot.setAttribute('cy',yy);
-
     hover.setAttribute('visibility','visible');
 
     const d=new Date(point.t);
-
     tip.innerHTML=
-      `<div class="tt-time">${fmtTime(d)}</div>`+
-      `<div class="tt-value">${fmt(v,2)} Hz</div>`;
+      `<div class="tt-time">${d.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}</div>`+
+      `<div class="tt-value">${fmt(point.value,2)} Hz</div>`;
 
     const chartRect=chart.getBoundingClientRect();
-
-    let left=e.clientX-chartRect.left+12;
-    const top=e.clientY-chartRect.top-48;
-
-    if(left+125>chart.clientWidth){
-      left=e.clientX-chartRect.left-137;
-    }
+    let left=clientX-chartRect.left+12;
+    const top=clientY-chartRect.top-48;
+    if(left+125>chart.clientWidth)left=clientX-chartRect.left-137;
 
     tip.style.left=Math.max(4,left)+'px';
     tip.style.top=Math.max(4,top)+'px';
     tip.style.display='block';
   };
 
-  // Lyssnaren sitter på SVG:t som ersätts när grafen ritas om.
-  // Därmed samlas inte gamla lyssnare på hög.
-  svg.addEventListener('mousemove',update);
+  // Bind bara en gång till den permanenta chart-containern.
+  // SVG:t byts ut varje sekund, så en listener på SVG:t skulle tappa hoverläget.
+  if(!chart._freqHoverBound){
+    chart._freqHoverBound=true;
 
-  svg.addEventListener('mouseleave',()=>{
-    hover.setAttribute('visibility','hidden');
-    tip.style.display='none';
-  });
+    chart.addEventListener('mousemove',e=>{
+      chart._freqHoverActive=true;
+      chart._freqHoverX=e.clientX;
+      chart._freqHoverY=e.clientY;
+      chart._freqHoverRender?.(e.clientX,e.clientY);
+    });
+
+    chart.addEventListener('mouseleave',()=>{
+      chart._freqHoverActive=false;
+      const svg=chart.querySelector('svg');
+      const hover=svg?.querySelector('.freq-hover');
+      if(hover)hover.setAttribute('visibility','hidden');
+      tip.style.display='none';
+    });
+  }
+
+  chart._freqHoverRender=renderHover;
+
+  // Om muspekaren ligger stilla när SVG:t ritas om:
+  // återställ hover direkt på den nya grafen.
+  if(chart._freqHoverActive && Number.isFinite(chart._freqHoverX) && Number.isFinite(chart._freqHoverY)){
+    renderHover(chart._freqHoverX,chart._freqHoverY);
+  }
 }
-
 async function getJson(url,timeoutMs=8000){const sep=url.includes('?')?'&':'?';const c=new AbortController(),timer=setTimeout(()=>c.abort(),timeoutMs);try{const r=await fetch(url+sep+'t='+Date.now(),{cache:'no-store',signal:c.signal});if(!r.ok)throw new Error('HTTP '+r.status);return await r.json()}catch(e){if(e?.name==='AbortError')throw new Error('timeout efter '+Math.round(timeoutMs/1000)+' s');throw e}finally{clearTimeout(timer)}}
 
 function parseEntries(area){
