@@ -671,7 +671,12 @@ function addFrequencyHover(){
   const zMax=50+range;
 
   const y=v=>pT+(zMax-v)/(zMax-zMin)*plotH;
-  const x=i=>pL+i*plotW/Math.max(1,points.length-1);
+
+  // Hover ska använda exakt samma tidsbas som själva grafen.
+  // Grafens X-axel visar alltid ett rullande 30-minutersfönster.
+  const endMs=points[points.length-1].t;
+  const startMs=endMs-30*60*1000;
+  const x=t=>pL+(t-startMs)/(30*60*1000)*plotW;
 
   const fmtTime=d=>d.toLocaleTimeString('sv-SE',{
     hour:'2-digit',
@@ -691,15 +696,24 @@ function addFrequencyHover(){
       Math.min(1,(ratio-(pL/w))/(plotW/w))
     );
 
-    const i=Math.round(
-      plotRatio*(points.length-1)
-    );
+    const hoverTime=startMs+plotRatio*(endMs-startMs);
 
-    const point=points[i];
+    // Välj närmaste faktiska 1-sekundsdatapunkt.
+    const i=Math.max(0,Math.min(points.length-1,
+      Math.round((hoverTime-points[0].t)/ms)
+    ));
+
+    let point=points[i];
     if(!point)return;
 
+    // Om det finns en liten lucka i datan: välj faktiskt närmaste punkt.
+    const prev=points[i-1];
+    const next=points[i+1];
+    if(prev && Math.abs(prev.t-hoverTime)<Math.abs(point.t-hoverTime))point=prev;
+    if(next && Math.abs(next.t-hoverTime)<Math.abs(point.t-hoverTime))point=next;
+
     const v=point.value;
-    const xx=x(i);
+    const xx=x(point.t);
     const yy=y(v);
 
     line.setAttribute('x1',xx);
