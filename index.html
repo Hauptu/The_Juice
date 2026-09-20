@@ -128,7 +128,7 @@ h2{display:block;margin:0;font-family:var(--font-display);font-size:16px;font-we
   border:1px solid var(--line-soft);border-radius:var(--r-chart);padding:9px;
 }
 .chart svg{width:100%;height:100%;display:block}
-.sectiontitle{font-size:10px;color:var(--blue);text-transform:uppercase;letter-spacing:.06em;font-weight:800;margin:0}
+.sectiontitle{font-size:10px;color:var(--blue);text-transform:uppercase;letter-spacing:.06em;font-weight:800;margin:0}.price-chart-title{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.price-inline-legend{display:inline-flex;align-items:center;gap:12px;color:var(--text-dim);font-size:10px;font-weight:600;letter-spacing:.02em;text-transform:none}.price-inline-legend span{white-space:nowrap}.price-inline-legend i{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle}
 .muted{color:var(--text-faint)}
 .tiny{font-size:8px}
 .small{font-size:10px}
@@ -455,7 +455,7 @@ h2,
   <div class="content">
     <div class="grid4" id="areaCards"></div>
     <div class="card flex-fill">
-      <div class="sectiontitle" id="priceWindowTitle">Day-ahead · rullande fönster · SE1–SE4</div>
+      <div class="sectiontitle price-chart-title" id="priceWindowTitle">Day-ahead · rullande fönster · <span class="price-inline-legend"></span></div>
       <div class="chart" id="priceChart"></div>
     </div>
   </div>
@@ -814,8 +814,12 @@ function rollingPriceChart(){
     if(dateChanged)labels+=`<text x="${xx}" y="${h-4}" text-anchor="middle" class="axis" font-weight="700">${d.toLocaleDateString('sv-SE',{day:'2-digit',month:'short'})}</text>`;
   }
   const svg=`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">${grid}${vgrid}${paths}${nowLine}${labels}</svg>`;
-  const legend=`<div class="legend">${A.map((a,i)=>`<span><i style="background:${colors[i]}"></i>${a}</span>`).join('')}</div>`;
-  return svg+legend;
+  const title=$('priceWindowTitle');
+  if(title){
+    const legend=title.querySelector('.price-inline-legend');
+    if(legend)legend.innerHTML=A.map((a,i)=>`<span><i style="background:${colors[i]}"></i>${a}</span>`).join('');
+  }
+  return svg;
 }
 
 function attachPriceHover(){
