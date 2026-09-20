@@ -1235,7 +1235,7 @@ async function frequency(){
   try{
     const now=Date.now();
     const initialLoad=!Array.isArray(state.freq)||!state.freq.length;
-    const lookbackMs=initialLoad?30*60*1000:6000;
+    const lookbackMs=initialLoad?30*60*1000:15000;
     const from=new Date(now-lookbackMs);
     const to=new Date(now);
 
