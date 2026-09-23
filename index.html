@@ -336,8 +336,6 @@ h2,
 
 
 .mfrr-content{gap:8px}.mfrr-head-right{display:flex;align-items:center;gap:8px}.mfrr-kpi-note{display:inline-flex;align-items:center;gap:7px;padding:4px 9px;border:1px solid rgba(79,159,85,.32);border-radius:999px;background:rgba(244,250,245,.95);color:#276a35;font-size:8.5px;font-weight:800;letter-spacing:.055em;text-transform:uppercase}.mfrr-kpi-note strong{font-size:9.5px}.mfrr-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.mfrr-card{background:rgba(255,255,255,.72);border:1px solid var(--line-soft);border-radius:8px;padding:12px 13px 11px;min-width:0;height:76px;overflow:hidden;transition:background .25s,border-color .25s,box-shadow .25s}.mfrr-card.active{background:#EEF3F6;border-color:#6F8799;box-shadow:0 0 0 1px rgba(111,135,153,.10),0 5px 14px -10px rgba(63,83,98,.24)}.mfrr-card.stale{border-color:rgba(202,138,4,.55);background:rgba(255,252,240,.82)}.mfrr-area{font-family:var(--font-body);font-size:10px;font-weight:700;letter-spacing:.07em;color:var(--text-dim);margin-bottom:5px}.mfrr-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px}.mfrr-label{display:block;font-family:var(--font-body);font-size:10px;font-weight:700;letter-spacing:.07em;margin-bottom:1px}.mfrr-label.up{color:#ee801c}.mfrr-label.down{color:#4f9f55}.mfrr-row>div{min-width:0}.mfrr-row b{display:block;font-family:var(--font-display);font-size:19px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.04em;white-space:nowrap}.mfrr-row small{display:block;font-family:var(--font-body);font-size:8px;line-height:1.05;color:var(--text-faint);letter-spacing:-.02em;white-space:nowrap;margin:2px 0 0}.mfrr-chart-head{display:flex;align-items:center;gap:10px}.mfrr-chart-card{position:relative;gap:8px;padding:10px 12px 11px;border-color:var(--line-soft)}.mfrr-rotation{display:flex;gap:3px;height:3px;margin:-1px 0 5px}.mfrr-rotation span{flex:1;background:var(--line);border-radius:99px;transition:background .2s}.mfrr-rotation span.active{background:#252b2a}.mfrr-legend{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin:0 0 2px;color:var(--text-faint);font-size:10px;font-weight:700}.mfrr-legend span{display:inline-flex;align-items:center;gap:5px}.legend-sample{display:inline-block;width:18px;height:0;border-top:2px solid currentColor}.legend-sample.up{color:#ee801c}.legend-sample.down{color:#4f9f55}.mfrr-line{fill:none;stroke-width:2.4;vector-effect:non-scaling-stroke;opacity:.95}.mfrr-line.up{stroke:#ee801c}.mfrr-line.down{stroke:#4f9f55}.xtick{stroke:var(--line);stroke-width:1}.nowline{stroke:#252b2a;stroke-width:1;stroke-dasharray:3 3;opacity:.35}.gridline{stroke:#dfe5e2;stroke-width:.7}.mfrr-chart-card .mfrr-y-axis{font-size:12px;font-weight:500}.mfrr-hover-line{stroke:#252b2a;stroke-width:1.2;stroke-dasharray:4 3;opacity:.55;pointer-events:none}
-.mfrr-hover-dot.up{fill:#ee801c;stroke:#fff;stroke-width:2}
-.mfrr-hover-dot.down{fill:#4f9f55;stroke:#fff;stroke-width:2}
 .mfrr-tooltip{position:absolute;z-index:20;display:none;min-width:150px;padding:9px 11px;border:1px solid rgba(0,0,0,.06);border-radius:8px;background:rgba(17,22,28,.96);box-shadow:0 14px 30px rgba(20,26,33,.28);font-size:10px;line-height:1.5;color:#eef2f6;pointer-events:none}
 .mfrr-tooltip .mtt-time{font-family:var(--font-display);font-weight:600;font-size:12px;margin-bottom:5px;color:#eef2f6}
 .mfrr-tooltip .mtt-row{display:flex;justify-content:space-between;gap:18px}
@@ -1020,7 +1018,7 @@ function mfrrSvg(rows,area){
     svg+=`<path d="${d}" class="mfrr-line ${dir}"/>`;
   }
   svg+=`<line x1="${x(end)}" y1="${pt}" x2="${x(end)}" y2="${h-pb}" class="nowline"/><text x="${Math.max(pl+12,Math.min(w-pr-12,x(end)))}" y="${pt+11}" text-anchor="${x(end)>w-70?'end':'start'}" class="axis" fill="#0e7490">NU</text>`;
-  svg+=`<g class="mfrr-hover" visibility="hidden"><line class="mfrr-hover-line" x1="${pl}" y1="${pt}" x2="${pl}" y2="${h-pb}"/><circle class="mfrr-hover-dot up" cx="${pl}" cy="${y(0)}" r="4"/><circle class="mfrr-hover-dot down" cx="${pl}" cy="${y(0)}" r="4"/></g></svg>`;
+  svg+=`<g class="mfrr-hover" visibility="hidden"><line class="mfrr-hover-line" x1="${pl}" y1="${pt}" x2="${pl}" y2="${h-pb}"/></g></svg>`;
   return svg;
 }
 
@@ -1034,10 +1032,7 @@ function attachMfrrHover(){
   chart.appendChild(tip);
 
   const hover=svg.querySelector('.mfrr-hover');
-  const line=svg.querySelector('.mfrr-hover-line');
-  const dotUp=svg.querySelector('.mfrr-hover-dot.up');
-  const dotDown=svg.querySelector('.mfrr-hover-dot.down');
-  if(!hover||!line||!dotUp||!dotDown)return;
+  const line=svg.querySelector('.mfrr-hover-line');\n  if(!hover||!line)return;
 
   const area=mfrrAreas[mfrrAreaIndex];
   const now=new Date();
@@ -1089,17 +1084,6 @@ function attachMfrrHover(){
     line.setAttribute('x1',xx);
     line.setAttribute('x2',xx);
 
-    if(up){
-      dotUp.setAttribute('cx',xx);
-      dotUp.setAttribute('cy',y(up.up));
-      dotUp.setAttribute('visibility','visible');
-    }else dotUp.setAttribute('visibility','hidden');
-
-    if(down){
-      dotDown.setAttribute('cx',xx);
-      dotDown.setAttribute('cy',y(down.down));
-      dotDown.setAttribute('visibility','visible');
-    }else dotDown.setAttribute('visibility','hidden');
 
     hover.setAttribute('visibility','visible');
 
@@ -1122,8 +1106,6 @@ function attachMfrrHover(){
   chart.addEventListener('mousemove',update);
   chart.addEventListener('mouseleave',()=>{
     hover.setAttribute('visibility','hidden');
-    dotUp.setAttribute('visibility','hidden');
-    dotDown.setAttribute('visibility','hidden');
     tip.style.display='none';
   });
 }
