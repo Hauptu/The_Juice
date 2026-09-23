@@ -1032,7 +1032,8 @@ function attachMfrrHover(){
   chart.appendChild(tip);
 
   const hover=svg.querySelector('.mfrr-hover');
-  const line=svg.querySelector('.mfrr-hover-line');\n  if(!hover||!line)return;
+  const line=svg.querySelector('.mfrr-hover-line');
+  if(!hover||!line)return;
 
   const area=mfrrAreas[mfrrAreaIndex];
   const now=new Date();
