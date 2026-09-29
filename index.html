@@ -1682,6 +1682,12 @@ async function mfrr(){
     status('systemStatus',payload.cached?'LIVE · CACHE':'LIVE','ok',payload.cached?'Visar senast lyckade ENTSO-E-data medan ny hämtning väntar eller delvis misslyckades.':'Senast lyckad ENTSO-E-hämtning.');
   }catch(e){
     console.warn('ENTSO-E mFRR:',e);
+    // Vid kallstart: försök igen efter 15 s om första ENTSO-E-hämtningen misslyckades.
+    // Den vanliga uppdateringen ligger kvar på 5 minuter.
+    if(!mfrrRowsCache.length && !window.mfrrStartupRetry){
+      window.mfrrStartupRetry=true;
+      setTimeout(()=>{ window.mfrrStartupRetry=false; mfrr(); },15000);
+    }
     const msg=String(e?.message||e);
     systemFailCount++;
     // A temporary ENTSO-E failure should not make an already working dashboard look dead.
@@ -1759,7 +1765,7 @@ function swedishDateTime(d=new Date()){const days=['Sön.','Mån.','Tis.','Ons.'
 function clock(){const d=new Date();$('clockDate').textContent=swedishDateTimeShort(d);$('clockMain').textContent=d.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}
 clock();setInterval(clock,1000);prices();mfrr();frequency();
 setInterval(prices,900000);
-setInterval(mfrr,60000);
+setInterval(mfrr,300000);
 setInterval(()=>{mfrrAreaIndex=(mfrrAreaIndex+1)%4;rendermFRRArea()},7000);
 setInterval(frequency,5000);
 
