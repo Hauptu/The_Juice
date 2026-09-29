@@ -330,10 +330,33 @@ h2,
 #physical .head{border-bottom-color:var(--line-soft)}
 
 /* ---------- layout switcher ---------- */
-.layout-toggle{
+.dashboard-chrome{
   position:fixed;
   top:12px;
   right:12px;
+  z-index:1000;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.data-health{
+  display:none;
+  width:10px;
+  height:10px;
+  flex:0 0 10px;
+  border-radius:50%;
+  background:var(--green);
+  box-shadow:0 0 0 2px rgba(255,255,255,.9),0 2px 8px rgba(37,43,42,.20);
+  cursor:help;
+}
+.data-health.ok{background:var(--green)}
+.data-health.warn{background:var(--yellow)}
+.data-health.err{background:var(--orange)}
+#app.layout-1x2 ~ .dashboard-chrome .data-health{display:block}
+.layout-toggle{
+  position:relative;
+  top:auto;
+  right:auto;
   z-index:1000;
   display:inline-flex;
   align-items:center;
@@ -564,8 +587,11 @@ h2,
 #app.layout-1x2 #market .foot{
   display:none;
 }
+#app.layout-1x2 ~ .dashboard-chrome .data-health{display:block}
+#app.layout-1x2 #systemStatus,
+#app.layout-1x2 .mfrr-kpi-note{display:none}
 @media(max-width:700px){
-  .layout-toggle{
+  .dashboard-chrome{
     top:8px;
     right:8px;
   }
@@ -696,9 +722,12 @@ h2,
 </style>
 </head>
 <body>
-<div class="layout-toggle" aria-label="Dashboardlayout">
+<div class="dashboard-chrome">
+  <div class="data-health" id="dataHealth" title="Datastatus" aria-label="Datastatus"></div>
+  <div class="layout-toggle" aria-label="Dashboardlayout">
   <button type="button" data-layout="2x2" class="active" aria-pressed="true">2×2</button>
   <button type="button" data-layout="1x2" aria-pressed="false">1×2</button>
+</div>
 </div>
 <div id="app">
 <section class="panel" id="market">
@@ -780,7 +809,18 @@ const fmt=(n,d=1)=>Number.isFinite(n)?n.toLocaleString('sv-SE',{minimumFractionD
 const fmt0=n=>Number.isFinite(n)?Math.round(n).toLocaleString('sv-SE'):'—';
 const time=s=>{const d=new Date(s);return isNaN(d)?'—':d.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'})};
 const timeSec=s=>{const d=new Date(s);return isNaN(d)?'—':d.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit',second:'2-digit'})};
-function status(id,text,kind='ok',title=''){const e=$(id);e.textContent=text;e.className='badge '+kind;e.title=title}
+function updateDataHealth(){
+  const dot=$('dataHealth');
+  if(!dot)return;
+  const badges=['marketStatus','freqStatus','systemStatus'].map(id=>$(id)).filter(Boolean);
+  const kinds=badges.map(e=>e.className.split(' ').find(c=>['ok','stale','err','loading'].includes(c))||'loading');
+  const titles=badges.map(e=>e.title).filter(Boolean);
+  const kind=kinds.includes('err')?'err':(kinds.includes('stale')||kinds.includes('loading')?'warn':'ok');
+  dot.className='data-health '+kind;
+  dot.title=titles.length?titles.join(' · '):'Datastatus: hämtar data…';
+  dot.setAttribute('aria-label',dot.title);
+}
+function status(id,text,kind='ok',title=''){const e=$(id);e.textContent=text;e.className='badge '+kind;e.title=title;updateDataHealth()}
 function stamp(id,d,label='Synkad'){ $(id).textContent=d?(`${label} ${timeSec(d)}`):'—'}
 function markSync(key,id,label='Synkad'){state.sync[key]=Date.now();stamp(id,state.sync[key],label)}
 function refreshStatus(key,id,source){
