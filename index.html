@@ -212,9 +212,10 @@ h2{display:block;margin:0;font-family:var(--font-display);font-size:16px;font-we
 .freq-unit{font-family:var(--font-display);font-size:16px;font-weight:600;color:var(--text-dim)}
 .freq-zone-axis{font-family:var(--font-body);font-size:10px;fill:#69756f;font-weight:500}
 .freq-zone-axis-opt{font-family:var(--font-body);font-size:10px;fill:#69756f;font-weight:500}
-/* SVG scales vertically in the compact 1x2 chart. Use a larger source font so the rendered axis labels stay crisp and readable. */
-#app.layout-1x2 .freq-zone-axis,
-#app.layout-1x2 .freq-zone-axis-opt{font-size:22px;font-weight:600}
+.freq-chart-shell{position:relative;width:100%;height:100%;min-height:0}
+.freq-y-labels{position:absolute;inset:0;pointer-events:none;font-family:var(--font-body);font-size:10px;font-weight:500;color:#69756f}
+.freq-y-label{position:absolute;left:0;width:42px;transform:translateY(-50%);text-align:right;line-height:1;white-space:nowrap}
+.freq-y-label.opt{font-weight:600;color:#69756f}
 .freq-boundary{stroke:var(--orange);stroke-width:1.15;stroke-dasharray:6 4;opacity:.92}
 .freq-optimum{stroke:var(--green);stroke-width:2;opacity:.95}
 .freq-trace{stroke:var(--wind);stroke-width:2.5}
@@ -845,7 +846,15 @@ function svgSingle(values,min,max,ref=null,endTime=null,periodMs=1000){
       .map(v=>Number(v.toFixed(3)))
   )].sort((a,b)=>a-b);
 
-  const axisHtml=axis.map(v=>{
+  const compactAxisHtml=compactFreq
+    ? axis.map(v=>{
+        const yy=y(v);
+        const topPct=(yy/h)*100;
+        const cls=Math.abs(v-50)<0.0005?'freq-y-label opt':'freq-y-label';
+        return `<span class="${cls}" style="top:${topPct.toFixed(3)}%">${v.toFixed(2).replace('.',',')}</span>`;
+      }).join('')
+    : '';
+  const axisHtml=compactFreq ? '' : axis.map(v=>{
     const yy=y(v);
     const cls=Math.abs(v-50)<0.0005?'freq-zone-axis-opt':'freq-zone-axis';
     return `<text x="${pL-7}" y="${yy+4}" text-anchor="end" class="${cls}">${v.toFixed(2).replace('.',',')}</text>`;
@@ -876,7 +885,10 @@ function svgSingle(values,min,max,ref=null,endTime=null,periodMs=1000){
     );
   }
 
-  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" class="freq-svg">${zones}${boundaries}${optimum}${axisHtml}${line}${ticks.join('')}<g class="freq-hover" visibility="hidden"><line class="freq-hover-line" x1="${pL}" y1="${pT}" x2="${pL}" y2="${h-pB}"/><circle class="freq-hover-dot" cx="${pL}" cy="${y(points[0].value)}" r="4"/></g></svg>`;
+  const svg=`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" class="freq-svg">${zones}${boundaries}${optimum}${axisHtml}${line}${ticks.join('')}<g class="freq-hover" visibility="hidden"><line class="freq-hover-line" x1="${pL}" y1="${pT}" x2="${pL}" y2="${h-pB}"/><circle class="freq-hover-dot" cx="${pL}" cy="${y(points[0].value)}" r="4"/></g></svg>`;
+  return compactFreq
+    ? `<div class="freq-chart-shell">${svg}<div class="freq-y-labels">${compactAxisHtml}</div></div>`
+    : svg;
 }
 
 function addFrequencyHover(){
