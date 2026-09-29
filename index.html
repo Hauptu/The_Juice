@@ -322,6 +322,74 @@ h2,
 /* Keep the clock neutral; its photo may remain visually distinctive. */
 #physical .head{border-bottom-color:var(--line-soft)}
 
+/* ---------- layout switcher ---------- */
+.layout-toggle{
+  position:fixed;
+  top:12px;
+  right:12px;
+  z-index:1000;
+  display:inline-flex;
+  align-items:center;
+  gap:2px;
+  padding:3px;
+  background:rgba(255,255,255,.94);
+  border:1px solid var(--line);
+  border-radius:999px;
+  box-shadow:0 6px 18px -12px rgba(37,43,42,.45);
+  backdrop-filter:blur(8px);
+}
+.layout-toggle button{
+  appearance:none;
+  border:0;
+  background:transparent;
+  color:var(--text-faint);
+  font-family:var(--font-body);
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.055em;
+  line-height:1;
+  padding:7px 10px;
+  border-radius:999px;
+  cursor:pointer;
+  transition:background .18s,color .18s,box-shadow .18s;
+}
+.layout-toggle button:hover{color:var(--text)}
+.layout-toggle button.active{
+  background:var(--wind);
+  color:#fff;
+  box-shadow:0 2px 7px rgba(37,43,42,.20);
+}
+
+/* 1x2 = two physical screens stacked vertically.
+   Upper screen: Day-ahead + System frequency side by side.
+   Lower screen: mFRR full width, with its existing internal proportions untouched. */
+#app.layout-1x2{
+  grid-template-columns:1fr 1fr;
+  grid-template-rows:1fr 1fr;
+}
+#app.layout-1x2 #market{
+  grid-column:1;
+  grid-row:1;
+}
+#app.layout-1x2 #balance{
+  grid-column:2;
+  grid-row:1;
+}
+#app.layout-1x2 #system{
+  grid-column:1 / 3;
+  grid-row:2;
+}
+#app.layout-1x2 #physical{
+  display:none;
+}
+
+@media(max-width:700px){
+  .layout-toggle{
+    top:8px;
+    right:8px;
+  }
+}
+
 @media(max-width:1100px){
   #app{gap:7px;padding:7px}
   .panel{padding:13px 13px 24px}
@@ -447,6 +515,10 @@ h2,
 </style>
 </head>
 <body>
+<div class="layout-toggle" aria-label="Dashboardlayout">
+  <button type="button" data-layout="2x2" class="active" aria-pressed="true">2×2</button>
+  <button type="button" data-layout="1x2" aria-pressed="false">1×2</button>
+</div>
 <div id="app">
 <section class="panel" id="market">
   <div class="head"><div><h2><span class="panel-index">01</span>Day-ahead</h2></div><div class="badge" id="marketStatus">Hämtar…</div></div>
@@ -498,6 +570,26 @@ h2,
 
 
 const $=id=>document.getElementById(id), A=['SE1','SE2','SE3','SE4'];
+
+const layoutToggle=document.querySelector('.layout-toggle');
+const layoutButtons=[...document.querySelectorAll('.layout-toggle button')];
+
+function setDashboardLayout(layout,save=true){
+  const mode=layout==='1x2'?'1x2':'2x2';
+  $('app').classList.toggle('layout-1x2',mode==='1x2');
+  layoutButtons.forEach(btn=>{
+    const active=btn.dataset.layout===mode;
+    btn.classList.toggle('active',active);
+    btn.setAttribute('aria-pressed',active?'true':'false');
+  });
+  if(save) localStorage.setItem('juice-dashboard-layout',mode);
+}
+
+layoutButtons.forEach(btn=>{
+  btn.addEventListener('click',()=>setDashboardLayout(btn.dataset.layout));
+});
+
+setDashboardLayout(localStorage.getItem('juice-dashboard-layout')||'2x2',false);
 const state={prices:{},systemHistory:[],freq:[],sync:{market:0,system:0,freq:0},marketLastSuccess:0};
 const SYNC_MAX={market:1200000,system:1200000,freq:20000};
 const attempted={market:false,system:false,freq:false};
