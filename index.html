@@ -365,9 +365,9 @@ h2,
    Lower screen: mFRR full width, with its existing internal proportions untouched. */
 #app.layout-1x2{
   grid-template-columns:1fr;
-  /* 25% Day-ahead + 25% frequency = one upper physical screen;
-     50% mFRR = one lower physical screen. */
-  grid-template-rows:1fr 1fr 2fr;
+  /* One physical upper screen: ~70% Day-ahead + ~30% frequency.
+     Lower physical screen remains 50% mFRR. */
+  grid-template-rows:7fr 3fr 10fr;
 }
 #app.layout-1x2 #market{
   grid-column:1;
@@ -388,7 +388,7 @@ h2,
   display:none;
 }
 
-/* ---------- compact 1x2 upper screen ---------- */
+/* ---------- tuned 1x2 upper screen ---------- */
 .freq-inline{display:none}
 #app.layout-1x2 #market,
 #app.layout-1x2 #balance{
@@ -402,35 +402,37 @@ h2,
 #app.layout-1x2 #market .content,
 #app.layout-1x2 #balance .content{
   padding-top:7px;
-  gap:6px;
+  gap:7px;
 }
+
+/* Day-ahead gets most of the upper physical screen. */
 #app.layout-1x2 #market .grid4{
   gap:7px;
 }
 #app.layout-1x2 #market #areaCards .card{
-  height:48px;
-  padding:6px 10px 5px;
-  gap:1px;
+  height:70px;
+  padding:9px 11px 7px;
+  gap:2px;
   border-radius:7px;
 }
 #app.layout-1x2 #market #areaCards .label{
-  font-size:8px;
+  font-size:9px;
   line-height:1;
 }
 #app.layout-1x2 #market #areaCards .price{
-  font-size:20px;
+  font-size:22px;
   line-height:1;
-  margin-top:1px;
+  margin-top:2px;
   white-space:nowrap;
 }
 #app.layout-1x2 #market #areaCards .unit{
-  font-size:9px;
+  font-size:10px;
   margin-left:3px;
 }
 #app.layout-1x2 #market #areaCards .time{
-  font-size:7px;
+  font-size:8px;
   line-height:1;
-  margin-top:1px;
+  margin-top:2px;
 }
 #app.layout-1x2 #market .card.flex-fill{
   padding:7px 9px 8px;
@@ -451,6 +453,8 @@ h2,
 #app.layout-1x2 #market .chart{
   padding:5px;
 }
+
+/* Frequency only needs a compact header + graph. */
 #app.layout-1x2 #balance .head{
   position:relative;
 }
@@ -478,18 +482,21 @@ h2,
   margin-left:0;
 }
 #app.layout-1x2 #balance .freq-main-card{
-  padding:7px 9px 8px;
-  gap:5px;
+  padding:0 1px 2px;
+  gap:4px;
+  border:0;
+  background:transparent;
+  box-shadow:none;
 }
 #app.layout-1x2 #balance .freq-main-card .sectiontitle{
-  font-size:9px;
+  display:none;
 }
 #app.layout-1x2 #balance .chart{
-  padding:5px;
+  padding:4px;
 }
 #app.layout-1x2 #balance .foot,
 #app.layout-1x2 #market .foot{
-  bottom:6px;
+  bottom:5px;
   font-size:8px;
 }
 #app.layout-1x2 #balance h2,
