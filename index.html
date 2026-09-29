@@ -1013,8 +1013,10 @@ function rollingPriceChart(){
   // En liten marginal runt yttervärdena gör att linjerna inte klistrar mot kanten.
   const rawRange=Math.max(1,maxRaw-minRaw);
   const pad=Math.max(20,rawRange*0.08);
-  const scaleMin=Math.min(0,minRaw)-pad;
-  const scaleMax=Math.max(0,maxRaw)+pad;
+  // Keep the baseline at 0 whenever the visible price window contains no
+  // negative prices. Only open the axis below 0 when negative prices exist.
+  const scaleMin=minRaw>=0 ? 0 : minRaw-pad;
+  const scaleMax=maxRaw+pad;
   const niceStep=range=>{
     const rough=range/5;
     const pow=10**Math.floor(Math.log10(Math.max(rough,1)));
