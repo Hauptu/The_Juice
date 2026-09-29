@@ -388,6 +388,114 @@ h2,
   display:none;
 }
 
+/* ---------- compact 1x2 upper screen ---------- */
+#app.layout-1x2 #market,
+#app.layout-1x2 #balance{
+  padding:10px 12px 20px;
+}
+#app.layout-1x2 #market .head,
+#app.layout-1x2 #balance .head{
+  padding-bottom:7px;
+  align-items:center;
+}
+#app.layout-1x2 #market .content,
+#app.layout-1x2 #balance .content{
+  padding-top:7px;
+  gap:6px;
+}
+#app.layout-1x2 #market .grid4{
+  gap:7px;
+}
+#app.layout-1x2 #market #areaCards .card{
+  height:48px;
+  padding:6px 10px 5px;
+  gap:1px;
+  border-radius:7px;
+}
+#app.layout-1x2 #market #areaCards .label{
+  font-size:8px;
+  line-height:1;
+}
+#app.layout-1x2 #market #areaCards .price{
+  font-size:20px;
+  line-height:1;
+  margin-top:1px;
+  white-space:nowrap;
+}
+#app.layout-1x2 #market #areaCards .unit{
+  font-size:9px;
+  margin-left:3px;
+}
+#app.layout-1x2 #market #areaCards .time{
+  font-size:7px;
+  line-height:1;
+  margin-top:1px;
+}
+#app.layout-1x2 #market .card.flex-fill{
+  padding:7px 9px 8px;
+  gap:5px;
+}
+#app.layout-1x2 #market .price-chart-title{
+  font-size:9px;
+  gap:5px;
+}
+#app.layout-1x2 #market .price-inline-legend{
+  font-size:8px;
+  gap:8px;
+}
+#app.layout-1x2 #market .price-inline-legend i{
+  width:10px;
+  margin-right:3px;
+}
+#app.layout-1x2 #market .chart{
+  padding:5px;
+}
+#app.layout-1x2 #balance .head{
+  position:relative;
+}
+#app.layout-1x2 #balance .hero{
+  display:none;
+}
+#app.layout-1x2 #balance #freqStatus{
+  display:none;
+}
+#app.layout-1x2 #balance .freq-inline{
+  display:flex;
+  align-items:baseline;
+  gap:5px;
+  margin-left:auto;
+  margin-right:8px;
+}
+#app.layout-1x2 #balance .freq-inline .v{
+  font-family:var(--font-display);
+  font-size:19px;
+  line-height:1;
+  font-weight:600;
+}
+#app.layout-1x2 #balance .freq-inline .unit{
+  font-size:10px;
+  margin-left:0;
+}
+#app.layout-1x2 #balance .freq-main-card{
+  padding:7px 9px 8px;
+  gap:5px;
+}
+#app.layout-1x2 #balance .freq-main-card .sectiontitle{
+  font-size:9px;
+}
+#app.layout-1x2 #balance .chart{
+  padding:5px;
+}
+#app.layout-1x2 #balance .foot,
+#app.layout-1x2 #market .foot{
+  bottom:6px;
+  font-size:8px;
+}
+#app.layout-1x2 #balance h2,
+#app.layout-1x2 #market h2{
+  font-size:14px;
+}
+
 @media(max-width:700px){
   .layout-toggle{
     top:8px;
@@ -560,7 +668,7 @@ h2,
 </section>
 
 <section class="panel" id="balance">
-  <div class="head"><div><h2><span class="panel-index">02</span>Systemfrekvens</h2></div><div class="badge" id="freqStatus">Hämtar…</div></div>
+  <div class="head"><div><h2><span class="panel-index">02</span>Systemfrekvens</h2></div><div class="freq-inline"><div class="v" id="freqInline">—</div><div class="unit">Hz</div></div><div class="badge" id="freqStatus">Hämtar…</div></div>
   <div class="content">
     <div class="hero hero-two"><div><div class="freq-reading"><div class="v" id="freq">—</div><div class="freq-unit">Hz</div></div></div><div><div class="v" id="freqDev">—</div><div class="u">Hz avvikelse</div></div></div>
     <div class="card freq-main-card flex-fill">
@@ -1436,7 +1544,10 @@ setInterval(()=>{
   const at=new Date(last.t);
   const dev=f-50;
 
-  $('freq').textContent=fmt(f,3);
+  const freqText=fmt(f,3);
+  $('freq').textContent=freqText;
+  const freqInline=$('freqInline');
+  if(freqInline)freqInline.textContent=freqText;
 
   $('freqDev').textContent=
     (dev>=0?'+':'')+fmt(dev,3);
