@@ -365,39 +365,27 @@ h2,
    Lower screen: mFRR full width, with its existing internal proportions untouched. */
 #app.layout-1x2{
   grid-template-columns:1fr;
-  grid-template-rows:1fr 1fr;
+  /* 25% Day-ahead + 25% frequency = one upper physical screen;
+     50% mFRR = one lower physical screen. */
+  grid-template-rows:1fr 1fr 2fr;
 }
-/* Upper physical screen: Day-ahead followed by frequency, both full width. */
 #app.layout-1x2 #market{
   grid-column:1;
   grid-row:1;
   min-height:0;
 }
 #app.layout-1x2 #balance{
-  grid-column:1;
-  grid-row:1;
-  min-height:0;
-  margin-top:50%;
-}
-#app.layout-1x2 #system{
   grid-column:1;
   grid-row:2;
   min-height:0;
 }
+#app.layout-1x2 #system{
+  grid-column:1;
+  grid-row:3;
+  min-height:0;
+}
 #app.layout-1x2 #physical{
   display:none;
-}
-/* The upper half is a stacked pair of panels sharing one physical screen. */
-#app.layout-1x2 #market{
-  height:50%;
-  align-self:start;
-}
-#app.layout-1x2 #balance{
-  height:50%;
-  align-self:end;
-}
-#app.layout-1x2 #system{
-  height:100%;
 }
 
 @media(max-width:700px){
