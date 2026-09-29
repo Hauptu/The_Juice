@@ -530,10 +530,14 @@ h2,
 #app.layout-1x2 #balance .chart{
   padding:3px;
 }
-#app.layout-1x2 #balance .foot,
-#app.layout-1x2 #market .foot{
+#app.layout-1x2 #balance .foot{
   bottom:4px;
   font-size:7px;
+}
+/* Source/sync footer is unnecessary in the compact 1x2 view.
+   Keep it in 2x2 where there is more room for context. */
+#app.layout-1x2 #market .foot{
+  display:none;
 }
 @media(max-width:700px){
   .layout-toggle{
