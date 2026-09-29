@@ -984,7 +984,8 @@ function svgSingle(values,min,max,ref=null,endTime=null,periodMs=1000){
     );
   }
 
-  const compactXLabels=compactFreq ? ticks.map((_,i)=>{const tickMs=firstTickMs+i*step;const xx=x(tickMs);const dt=new Date(tickMs);const label=String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0');const first=i===0,last=i===ticks.length-1;return \`<span class="freq-x-label" style="left:${((xx/w)*100).toFixed(3)}%;transform:translateX(-${first?'0':'50'}%)">${label}</span>\`;}).join('') : '';\n  const svg=\`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" class="freq-svg">${zones}${boundaries}${optimum}${axisHtml}${line}${ticks.join('')}<g class="freq-hover" visibility="hidden"><line class="freq-hover-line" x1="${pL}" y1="${pT}" x2="${pL}" y2="${h-pB}"/><circle class="freq-hover-dot" cx="${pL}" cy="${y(points[0].value)}" r="4"/></g></svg>`;
+  const compactXLabels=compactFreq ? ticks.map((_,i)=>{const tickMs=firstTickMs+i*step;const xx=x(tickMs);const dt=new Date(tickMs);const label=String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0');const first=i===0,last=i===ticks.length-1;return \`<span class="freq-x-label" style="left:${((xx/w)*100).toFixed(3)}%;transform:translateX(-${first?'0':'50'}%)">${label}</span>\`;}).join('') : '';
+  const svg=\`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" class="freq-svg">${zones}${boundaries}${optimum}${axisHtml}${line}${ticks.join('')}<g class="freq-hover" visibility="hidden"><line class="freq-hover-line" x1="${pL}" y1="${pT}" x2="${pL}" y2="${h-pB}"/><circle class="freq-hover-dot" cx="${pL}" cy="${y(points[0].value)}" r="4"/></g></svg>`;
   return compactFreq
     ? `<div class="freq-chart-shell">${svg}<div class="freq-y-labels">${compactAxisHtml}</div><div class="freq-x-labels">${compactXLabels}</div></div>`
     : svg;
