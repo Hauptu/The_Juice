@@ -401,6 +401,17 @@ h2,
   padding:7px 12px 15px;
   border-radius:0;
   box-shadow:none;
+  border-left:1px solid var(--line);
+  border-right:1px solid var(--line);
+}
+/* Day-ahead + frequency are one continuous physical screen: no panel seam. */
+#app.layout-1x2 #market{
+  border-top:1px solid var(--line);
+  border-bottom:0;
+}
+#app.layout-1x2 #balance{
+  border-top:0;
+  border-bottom:1px solid var(--line);
 }
 #app.layout-1x2 #market{
   border-bottom:0;
