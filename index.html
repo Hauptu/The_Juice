@@ -212,6 +212,9 @@ h2{display:block;margin:0;font-family:var(--font-display);font-size:16px;font-we
 .freq-unit{font-family:var(--font-display);font-size:16px;font-weight:600;color:var(--text-dim)}
 .freq-zone-axis{font-family:var(--font-body);font-size:10px;fill:#69756f;font-weight:500}
 .freq-zone-axis-opt{font-family:var(--font-body);font-size:10px;fill:#69756f;font-weight:500}
+/* SVG scales vertically in the compact 1x2 chart. Use a larger source font so the rendered axis labels stay crisp and readable. */
+#app.layout-1x2 .freq-zone-axis,
+#app.layout-1x2 .freq-zone-axis-opt{font-size:22px;font-weight:600}
 .freq-boundary{stroke:var(--orange);stroke-width:1.15;stroke-dasharray:6 4;opacity:.92}
 .freq-optimum{stroke:var(--green);stroke-width:2;opacity:.95}
 .freq-trace{stroke:var(--wind);stroke-width:2.5}
