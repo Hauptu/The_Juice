@@ -1378,7 +1378,17 @@ function mergeENTSOEImbalance(rows){
   const m=new Map();
   for(const r of rows){
     const k=r.a+'|'+r.t.getTime();
-    m.set(k,r);
+    const z=m.get(k)||{t:r.t,a:r.a,imbalance:null,category:null,categories:{}};
+    if(Number.isFinite(r.imbalance)){
+      z.categories[r.category||'unknown']=r.imbalance;
+      // A07 is the ENTSO-E category for a single marginal imbalance price.
+      // Prefer it when present; otherwise retain the first published value.
+      if(r.category==='A07' || !Number.isFinite(z.imbalance)){
+        z.imbalance=r.imbalance;
+        z.category=r.category||null;
+      }
+    }
+    m.set(k,z);
   }
   return Array.from(m.values()).sort((a,b)=>a.t-b.t);
 }
@@ -1589,8 +1599,11 @@ async function mfrr(){
     if(payload.errors) console.warn('[mFRR] Delvisa ENTSO-E-fel:',payload.errors);
     if(payload.imbalanceErrors) console.warn('[Obalanspris] Delvisa ENTSO-E A85-fel:',payload.imbalanceErrors);
     const imbalanceParts=[];
-    for(const [area,xmlText] of Object.entries(payload.imbalance||{})){
-      if(typeof xmlText==='string' && xmlText.trim()) imbalanceParts.push(parseENTSOEImbalance(xmlText,area));
+    for(const [area,xmlData] of Object.entries(payload.imbalance||{})){
+      const docs=Array.isArray(xmlData)?xmlData:[xmlData];
+      for(const xmlText of docs){
+        if(typeof xmlText==='string' && xmlText.trim()) imbalanceParts.push(parseENTSOEImbalance(xmlText,area));
+      }
     }
     if(imbalanceParts.length){
       const imbalanceRows=mergeENTSOEImbalance(imbalanceParts.flat()).filter(r=>r.t.getTime()<=Date.now()+60000);
