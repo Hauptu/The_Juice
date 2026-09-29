@@ -1145,7 +1145,7 @@ function rollingPriceChart(){
     labels+=`<text x="${xx}" y="${h-16}" text-anchor="middle" class="axis">${tm}</text>`;
     if(dateChanged)labels+=`<text x="${xx}" y="${h-4}" text-anchor="middle" class="axis" font-weight="700">${d.toLocaleDateString('sv-SE',{day:'2-digit',month:'short'})}</text>`;
   }
-  const svg=`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">${grid}${vgrid}${paths}${nowLine}${labels}</svg>`;
+  const svg=`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><text x="4" y="9" class="axis" font-size="8" fill="#69756f">SEK/MWh</text>${grid}${vgrid}${paths}${nowLine}${labels}</svg>`;
   const title=$('priceWindowTitle');
   if(title){
     const legend=title.querySelector('.price-inline-legend');
@@ -1331,7 +1331,7 @@ function mfrrSvg(rows,area){
   const ymin=Math.floor(scaleMin/step)*step;
   const ymax=Math.ceil(scaleMax/step)*step;
   const x=t=>pl+(t-start)/(end-start)*(w-pl-pr), y=v=>pt+(ymax-v)/(ymax-ymin)*(h-pt-pb), tick=d=>`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-  let svg=`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-label="mFRR-priser ${mfrrAreaNames[area]}">`;
+  let svg=`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-label="mFRR-priser ${mfrrAreaNames[area]}"><text x="4" y="11" class="axis" font-size="8" fill="#69756f">EUR/MWh</text>`;
   for(let v=ymin;v<=ymax+.001;v+=step)svg+=`<line x1="${pl}" y1="${y(v)}" x2="${w-pr}" y2="${y(v)}" class="gridline"/><text x="${pl-8}" y="${y(v)+3}" text-anchor="end" class="mfrr-y-axis">${fmt0(v)}</text>`;
   const spanHours=(end-start)/3600000; const labelEvery=spanHours<=2?900000:spanHours<=6?1800000:3600000; for(let t=start;t<=end;t+=900000){const d=new Date(t),xx=x(t);svg+=`<line x1="${xx}" y1="${h-pb}" x2="${xx}" y2="${h-pb+5}" class="xtick"/>`;if((t-start)%labelEvery===0)svg+=`<text x="${xx}" y="${h-12}" text-anchor="middle" class="axis">${tick(d)}</text>`;}
   for(const dir of ['up','down']){
