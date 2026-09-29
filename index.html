@@ -1300,7 +1300,7 @@ function entsoePeriod(){
     +String(d.getUTCMinutes()).padStart(2,'0');
   return {from:f(from),to:f(to)};
 }
-function parseENTSOEMFRR(xmlText, area){
+function parseENTSOEmFRR(xmlText, area){
   const doc = new DOMParser().parseFromString(xmlText,'application/xml');
   const parserError = doc.querySelector('parsererror');
   if(parserError) throw Error('ogiltigt ENTSO-E XML');
@@ -1339,7 +1339,7 @@ function parseENTSOEMFRR(xmlText, area){
   }
   return out;
 }
-function mergeENTSOEMFRR(rows){
+function mergeENTSOEmFRR(rows){
   const m = new Map();
   for(const r of rows){
     const k=r.a+'|'+r.t.getTime();
@@ -1395,7 +1395,7 @@ function mfrrSvg(rows,area){
   return svg;
 }
 
-function attachMfrrHover(){
+function attachmFRRHover(){
   const chart=$('mfrrChart'),svg=chart?.querySelector('svg');
   if(!chart||!svg)return;
   chart.querySelector('.mfrr-tooltip')?.remove();
@@ -1484,13 +1484,13 @@ function attachMfrrHover(){
   });
 }
 
-function renderMfrrArea(){
+function rendermFRRArea(){
   if(!mfrrRowsCache.length)return;
   const area=mfrrAreas[mfrrAreaIndex];
   document.querySelectorAll('.mfrr-card').forEach((el,i)=>el.classList.toggle('active',i===mfrrAreaIndex));
   document.querySelectorAll('#mfrrRotation span').forEach((el,i)=>el.classList.toggle('active',i===mfrrAreaIndex));
   $('mfrrChart').innerHTML=mfrrSvg(mfrrRowsCache,area);
-  attachMfrrHover();
+  attachmFRRHover();
 }
 
 async function mfrr(){
@@ -1510,9 +1510,9 @@ async function mfrr(){
     if(payload.errors) console.warn('[mFRR] Delvisa ENTSO-E-fel:',payload.errors);
     const parts=[];
     for(const [area,xmlText] of Object.entries(payload.data)){
-      if(typeof xmlText==='string' && xmlText.trim()) parts.push(parseENTSOEMFRR(xmlText,area));
+      if(typeof xmlText==='string' && xmlText.trim()) parts.push(parseENTSOEmFRR(xmlText,area));
     }
-    const rows=mergeENTSOEMFRR(parts.flat()).filter(r=>r.t.getTime()<=Date.now()+60000);
+    const rows=mergeENTSOEmFRR(parts.flat()).filter(r=>r.t.getTime()<=Date.now()+60000);
     if(!rows.length) throw Error('inga realiserade mFRR-rader från ENTSO-E');
     const latest={};
     for(const a of mfrrAreas){
@@ -1564,7 +1564,7 @@ async function mfrr(){
       const c=mfrrRowsCache.filter(r=>r.a===a && (Number.isFinite(r.up)||Number.isFinite(r.down))).sort((x,y)=>y.t-x.t);
       if(c.length && (!mfrrAreaLatest[a] || c[0].t.getTime()>mfrrAreaLatest[a].t.getTime())) mfrrAreaLatest[a]=c[0];
     }
-    renderMfrrArea();
+    rendermFRRArea();
     markSync('system','systemUpdated','Synkad');
     systemFailCount=0;
     status('systemStatus',payload.cached?'LIVE · CACHE':'LIVE','ok',payload.cached?'Visar senast lyckade ENTSO-E-data medan ny hämtning väntar eller delvis misslyckades.':'Senast lyckad ENTSO-E-hämtning.');
@@ -1575,7 +1575,7 @@ async function mfrr(){
     // A temporary ENTSO-E failure should not make an already working dashboard look dead.
     // Keep verified data and let the next minute try again.
     if(mfrrRowsCache.length){
-      renderMfrrArea();
+      rendermFRRArea();
       status('systemStatus','LIVE · CACHE','stale',`Senaste lyckade EAM-data visas. Försök ${systemFailCount} misslyckades.`);
     }else{
       status('systemStatus',msg.startsWith('ENTSO-E-token')?'TOKEN SAKNAS':'HÄMTAR…',msg.startsWith('ENTSO-E-token')?'err':'loading',msg);
@@ -1648,7 +1648,7 @@ function clock(){const d=new Date();$('clockDate').textContent=swedishDateTimeSh
 clock();setInterval(clock,1000);prices();mfrr();frequency();
 setInterval(prices,900000);
 setInterval(mfrr,60000);
-setInterval(()=>{mfrrAreaIndex=(mfrrAreaIndex+1)%4;renderMfrrArea()},7000);
+setInterval(()=>{mfrrAreaIndex=(mfrrAreaIndex+1)%4;rendermFRRArea()},7000);
 setInterval(frequency,5000);
 
 // Visa frekvensen sekund för sekund ur den lokala bufferten.
