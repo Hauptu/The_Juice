@@ -586,7 +586,24 @@ body.layout-1x2 .dashboard-chrome .data-health{display:block}
   font-size:9px;
 }
 #app.layout-1x2 #balance .freq-y-labels{
-  font-size:9px;
+  font-size:11px;
+}
+#app.layout-1x2 #balance .freq-x-labels{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  height:16px;
+  pointer-events:none;
+  font-family:var(--font-body);
+  font-size:10px;
+  line-height:1;
+  color:#69756f;
+  white-space:nowrap;
+}
+#app.layout-1x2 #balance .freq-x-label{
+  position:absolute;
+  bottom:0;
 }
 #app.layout-1x2 #balance .foot{
   display:none;
@@ -955,13 +972,13 @@ function svgSingle(values,min,max,ref=null,endTime=null,periodMs=1000){
     const first=tickMs===firstTickMs,last=tickMs===lastTickMs;
     ticks.push(
       `<line x1="${xx}" y1="${h-pB}" x2="${xx}" y2="${h-pB+4}" class="xtick"/>`+
-      `<text x="${xx}" y="${h-5}" text-anchor="${first?'start':last?'end':'middle'}" class="freq-x-axis">${label}</text>`
+      (compactFreq ? '' : `<text x="${xx}" y="${h-5}" text-anchor="${first?'start':last?'end':'middle'}" class="freq-x-axis">${label}</text>`)
     );
   }
 
-  const svg=`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" class="freq-svg">${zones}${boundaries}${optimum}${axisHtml}${line}${ticks.join('')}<g class="freq-hover" visibility="hidden"><line class="freq-hover-line" x1="${pL}" y1="${pT}" x2="${pL}" y2="${h-pB}"/><circle class="freq-hover-dot" cx="${pL}" cy="${y(points[0].value)}" r="4"/></g></svg>`;
+  const compactXLabels=compactFreq ? ticks.map((_,i)=>{const tickMs=firstTickMs+i*step;const xx=x(tickMs);const dt=new Date(tickMs);const label=String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0');const first=i===0,last=i===ticks.length-1;return \`<span class="freq-x-label" style="left:${((xx/w)*100).toFixed(3)}%;transform:translateX(-${first?'0':'50'}%)">${label}</span>\`;}).join('') : '';\n  const svg=\`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" class="freq-svg">${zones}${boundaries}${optimum}${axisHtml}${line}${ticks.join('')}<g class="freq-hover" visibility="hidden"><line class="freq-hover-line" x1="${pL}" y1="${pT}" x2="${pL}" y2="${h-pB}"/><circle class="freq-hover-dot" cx="${pL}" cy="${y(points[0].value)}" r="4"/></g></svg>`;
   return compactFreq
-    ? `<div class="freq-chart-shell">${svg}<div class="freq-y-labels">${compactAxisHtml}</div></div>`
+    ? `<div class="freq-chart-shell">${svg}<div class="freq-y-labels">${compactAxisHtml}</div><div class="freq-x-labels">${compactXLabels}</div></div>`
     : svg;
 }
 
