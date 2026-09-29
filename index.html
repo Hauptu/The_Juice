@@ -419,7 +419,9 @@ body.layout-1x2 .dashboard-chrome .data-health{display:block}
   display:none;
 }
 
-/* ---------- tuned 1x2 upper screen ---------- */
+
+#system .mfrr-title{text-transform:none}
+\n/* ---------- tuned 1x2 upper screen ---------- */
 .freq-inline{display:none}
 
 #app.layout-1x2{
@@ -782,7 +784,7 @@ body.layout-1x2 .dashboard-chrome .data-health{display:block}
 </section>
 
 <section class="panel" id="system">
-  <div class="head"><div><h2>mFRR - EAM</h2></div><div class="mfrr-head-right"><div class="mfrr-kpi-note">SENASTE UTFALL · <strong id="mfrrKpiOutcomeTime">—</strong></div><div class="badge" id="systemStatus">Hämtar…</div></div></div>
+  <div class="head"><div><h2 class="mfrr-title">mFRR - EAM</h2></div><div class="mfrr-head-right"><div class="mfrr-kpi-note">SENASTE UTFALL · <strong id="mfrrKpiOutcomeTime">—</strong></div><div class="badge" id="systemStatus">Hämtar…</div></div></div>
   <div class="content mfrr-content">
     <div class="mfrr-grid">
       <div class="mfrr-card"><div class="mfrr-area">SE1</div><div class="mfrr-row"><div><span class="mfrr-label up">UPP</span><b id="mfrr-SE1-up">—</b><small> EUR/MWh</small></div><div><span class="mfrr-label down">NED</span><b id="mfrr-SE1-down">—</b><small> EUR/MWh</small></div></div></div>
@@ -790,7 +792,7 @@ body.layout-1x2 .dashboard-chrome .data-health{display:block}
       <div class="mfrr-card"><div class="mfrr-area">SE3</div><div class="mfrr-row"><div><span class="mfrr-label up">UPP</span><b id="mfrr-SE3-up">—</b><small> EUR/MWh</small></div><div><span class="mfrr-label down">NED</span><b id="mfrr-SE3-down">—</b><small> EUR/MWh</small></div></div></div>
       <div class="mfrr-card"><div class="mfrr-area">SE4</div><div class="mfrr-row"><div><span class="mfrr-label up">UPP</span><b id="mfrr-SE4-up">—</b><small> EUR/MWh</small></div><div><span class="mfrr-label down">NED</span><b id="mfrr-SE4-down">—</b><small> EUR/MWh</small></div></div></div>
     </div>
-    <div class="card flex-fill mfrr-chart-card"><div class="mix-headline"><div class="mfrr-chart-head"><div class="sectiontitle">mFRR · senaste dygnet</div></div></div><div class="mfrr-rotation" id="mfrrRotation"><span></span><span></span><span></span><span></span></div><div class="mfrr-legend"><span><i class="legend-sample up"></i> Upp</span><span><i class="legend-sample down"></i> Ned</span></div><div class="chart" id="mfrrChart"></div></div>
+    <div class="card flex-fill mfrr-chart-card"><div class="mix-headline"><div class="mfrr-chart-head"><div class="sectiontitle">Senaste dygnet</div></div></div><div class="mfrr-rotation" id="mfrrRotation"><span></span><span></span><span></span><span></span></div><div class="mfrr-legend"><span><i class="legend-sample up"></i> Upp</span><span><i class="legend-sample down"></i> Ned</span></div><div class="chart" id="mfrrChart"></div></div>
   </div>
   <div class="foot"><span>ENTSO-E · mFRR EAM · A84</span><span id="systemUpdated">—</span></div>
 </section>
