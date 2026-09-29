@@ -28,11 +28,11 @@ export async function onRequestGet({ request, env }) {
     const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
     const u32 = o => view.getUint32(o, true);
     const u16 = o => view.getUint16(o, true);
-    const sig = u32(0);
+    const sig = bytes.length >= 4 ? u32(0) : 0;
 
     // Raw XML response.
     if (sig !== 0x04034b50 && sig !== 0x06054b50 && sig !== 0x02014b50) {
-      return new TextDecoder().decode(bytes);
+      return [new TextDecoder().decode(bytes)];
     }
 
     // Find end-of-central-directory record from the end of the file.
@@ -60,27 +60,29 @@ export async function onRequestGet({ request, env }) {
       p += 46 + nameLen + extraLen + commentLen;
     }
 
+    const xmlDocs = [];
     for (const entry of entries) {
       if (!/\.xml$/i.test(entry.name)) continue;
       const o = entry.localOffset;
       if (u32(o) !== 0x04034b50) continue;
       const nameLen = u16(o + 26);
       const extraLen = u16(o + 28);
-      const start = o + 30 + nameLen + extraLen;
-      const compressed = bytes.slice(start, start + entry.compressedSize);
+      const dataStart = o + 30 + nameLen + extraLen;
+      const compressed = bytes.slice(dataStart, dataStart + entry.compressedSize);
 
       if (entry.method === 0) {
-        return new TextDecoder().decode(compressed);
-      }
-      if (entry.method === 8) {
+        xmlDocs.push(new TextDecoder().decode(compressed));
+      } else if (entry.method === 8) {
         const stream = new Blob([compressed]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
         const plain = new Uint8Array(await new Response(stream).arrayBuffer());
-        return new TextDecoder().decode(plain);
+        xmlDocs.push(new TextDecoder().decode(plain));
+      } else {
+        throw Error("ENTSO-E A85: okänd ZIP-komprimering");
       }
-      throw Error("ENTSO-E A85: okänd ZIP-komprimering");
     }
 
-    throw Error("ENTSO-E A85: ingen XML-fil i ZIP-svaret");
+    if (!xmlDocs.length) throw Error("ENTSO-E A85: ingen XML-fil i ZIP-svaret");
+    return xmlDocs;
   }
 
   async function fetchArea(area, eic) {
