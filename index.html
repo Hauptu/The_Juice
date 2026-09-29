@@ -829,7 +829,13 @@ function svgSingle(values,min,max,ref=null,endTime=null,periodMs=1000){
 
   const optimum=`<line class="freq-optimum" x1="${pL}" y1="${y(50)}" x2="${w-pR}" y2="${y(50)}"/>`;
 
-  const axisValues=[zMin,49.50,49.90,50.00,50.10,50.50,zMax];
+  // The compact 1x2 chart has much less vertical room. Use only the
+  // three most useful frequency reference labels there; keep the fuller
+  // scale in 2x2.
+  const compactFreq=document.getElementById('app')?.classList.contains('layout-1x2');
+  const axisValues=compactFreq
+    ? [49.90,50.00,50.10]
+    : [zMin,49.50,49.90,50.00,50.10,50.50,zMax];
   const axis=[...new Set(
     axisValues
       .filter(v=>v>=zMin&&v<=zMax)
