@@ -352,7 +352,7 @@ h2,
 .data-health.ok{background:var(--green)}
 .data-health.warn{background:var(--yellow)}
 .data-health.err{background:var(--orange)}
-#app.layout-1x2 ~ .dashboard-chrome .data-health{display:block}
+body.layout-1x2 .dashboard-chrome .data-health{display:block}
 .layout-toggle{
   position:relative;
   top:auto;
@@ -787,6 +787,7 @@ const layoutButtons=[...document.querySelectorAll('.layout-toggle button')];
 function setDashboardLayout(layout,save=true){
   const mode=layout==='1x2'?'1x2':'2x2';
   $('app').classList.toggle('layout-1x2',mode==='1x2');
+  document.body.classList.toggle('layout-1x2',mode==='1x2');
   layoutButtons.forEach(btn=>{
     const active=btn.dataset.layout===mode;
     btn.classList.toggle('active',active);
