@@ -505,17 +505,16 @@ h2,
 #app.layout-1x2 #balance #freqStatus{
   display:none;
 }
-#app.layout-1x2 #balance .freq-heading{
+#app.layout-1x2 #balance .freq-title{
   display:flex;
   align-items:baseline;
   gap:8px;
 }
 #app.layout-1x2 #balance .freq-inline{
-  display:flex;
+  display:inline-flex;
   align-items:baseline;
   gap:4px;
-  margin-left:0;
-  margin-right:0;
+  margin:0;
 }
 #app.layout-1x2 #balance .freq-inline .v{
   font-family:var(--font-display);
@@ -721,7 +720,7 @@ h2,
 </section>
 
 <section class="panel" id="balance">
-  <div class="head"><div class="freq-heading"><h2>Systemfrekvens</h2><div class="freq-inline"><div class="v" id="freqInline">—</div><div class="unit">Hz</div></div></div><div class="badge" id="freqStatus">Hämtar…</div></div>
+  <div class="head"><div><h2 class="freq-title">Systemfrekvens <span class="freq-inline"><span class="v" id="freqInline">—</span><span class="unit">Hz</span></span></h2></div><div class="badge" id="freqStatus">Hämtar…</div></div>
   <div class="content">
     <div class="hero hero-two"><div><div class="freq-reading"><div class="v" id="freq">—</div><div class="freq-unit">Hz</div></div></div><div><div class="v" id="freqDev">—</div><div class="u">Hz avvikelse</div></div></div>
     <div class="card freq-main-card flex-fill">
