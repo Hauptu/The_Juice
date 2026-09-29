@@ -587,7 +587,7 @@ h2,
 #app.layout-1x2 #market .foot{
   display:none;
 }
-#app.layout-1x2 ~ .dashboard-chrome .data-health{display:block}
+body:has(#app.layout-1x2) .dashboard-chrome .data-health{display:block}
 #app.layout-1x2 #systemStatus,
 #app.layout-1x2 .mfrr-kpi-note{display:none}
 @media(max-width:700px){
