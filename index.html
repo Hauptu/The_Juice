@@ -1130,7 +1130,7 @@ function rollingPriceChart(){
       const xa=x(a),xb=x(b),yy=y(e.v);
       d+=i===0?`M ${xa} ${yy} L ${xb} ${yy}`:` L ${xa} ${yy} L ${xb} ${yy}`;
     });
-    return `<path d="${d}" fill="none" stroke="${colors[si]}" stroke-width="2.5" stroke-linejoin="miter" stroke-linecap="square"/>`;
+    return `<path d="${d}" fill="none" stroke="${colors[si]}" stroke-width="2.4" vector-effect="non-scaling-stroke" stroke-linejoin="miter" stroke-linecap="square"/>`;
   }).join('');
   const nowX=Math.max(pl,Math.min(w-pr,x(now)));
   const nowLine=`<line x1="${nowX}" y1="${pt}" x2="${nowX}" y2="${pt+plotH}" stroke="#0e7490" stroke-width="1.5" stroke-dasharray="4 3"/>`;
