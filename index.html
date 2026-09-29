@@ -576,17 +576,23 @@ body.layout-1x2 .dashboard-chrome .data-health{display:block}
   display:none;
 }
 #app.layout-1x2 #balance .chart{
-  padding:0 2px 0 0;
+  padding:0;
   overflow:visible;
+  border:0;
+  border-radius:0;
+  background:transparent;
 }
 #app.layout-1x2 #balance .freq-chart-shell{
+  position:relative;
+  height:100%;
   overflow:visible;
 }
-#app.layout-1x2 #balance .freq-x-axis{
-  font-size:9px;
+#app.layout-1x2 #balance .freq-chart-shell > svg{
+  height:calc(100% - 18px);
 }
 #app.layout-1x2 #balance .freq-y-labels{
   font-size:11px;
+  height:calc(100% - 18px);
 }
 #app.layout-1x2 #balance .freq-x-labels{
   position:absolute;
@@ -603,7 +609,9 @@ body.layout-1x2 .dashboard-chrome .data-health{display:block}
 }
 #app.layout-1x2 #balance .freq-x-label{
   position:absolute;
-  bottom:0;
+  bottom:1px;
+  display:block;
+  white-space:nowrap;
 }
 #app.layout-1x2 #balance .foot{
   display:none;
