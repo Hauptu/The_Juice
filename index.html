@@ -9,14 +9,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
-  /* supplied palette */
   --orange:#ee801c;
   --blue:#004b6e;
   --wind:#252b2a;
   --green:#285f2e;
   --yellow:#e5ac00;
 
-  /* Light tints derived from the supplied palette */
   --orange-08:rgba(238,128,28,.08);
   --blue-06:rgba(0,75,110,.06);
   --wind-08:rgba(37,43,42,.08);
@@ -65,7 +63,7 @@ body{
 }
 
 /* ---------- panel layout ---------- */
-/* Visual order: 01 Elpriser · 02 Balans · 03 Tid · 04 Produktion & förbrukning */
+/* Panel order */
 #market{order:1}
 #balance{order:2}
 #physical{order:3}
@@ -81,11 +79,6 @@ body{
   padding:18px 18px 29px;
   box-shadow:0 8px 24px -22px rgba(37,43,42,.38);
 }
-.panel:before{content:"";position:absolute;left:0;right:0;top:0;height:3px;z-index:1;opacity:1}
-#market:before{background:var(--orange)}
-#balance:before{background:var(--green)}
-#physical:before{background:var(--wind)}
-#system:before{background:var(--blue)}
 
 .head{flex:0 0 auto;display:flex;justify-content:space-between;align-items:flex-start;gap:14px;border-bottom:1px solid var(--line-soft);padding-bottom:12px}
 h2{display:block;margin:0;font-family:var(--font-display);font-size:16px;font-weight:700;letter-spacing:.025em;text-transform:uppercase;color:var(--blue)}
@@ -133,9 +126,6 @@ h2{display:block;margin:0;font-family:var(--font-display);font-size:16px;font-we
 .chart svg{width:100%;height:100%;display:block}
 .sectiontitle{font-size:10px;color:var(--blue);text-transform:uppercase;letter-spacing:.06em;font-weight:400;margin:0}.price-chart-title{display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-weight:400}.price-inline-legend{display:inline-flex;align-items:center;gap:12px;color:var(--text);font-size:10px;font-weight:400;letter-spacing:.02em;text-transform:none}.price-inline-legend span{white-space:nowrap}.price-inline-legend i{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle}
 .muted{color:var(--text-faint)}
-.tiny{font-size:8px}
-.small{font-size:10px}
-.right{text-align:right}
 
 /* ---------- ruta 1 · price areas ---------- */
 .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;flex:0 0 auto}
@@ -178,7 +168,6 @@ h2{display:block;margin:0;font-family:var(--font-display);font-size:16px;font-we
 .data-badge{font-size:9px;letter-spacing:.025em;color:var(--blue);background:var(--blue-06);border:1px solid rgba(0,75,110,.16);border-radius:var(--r-chip);padding:5px 10px;white-space:nowrap;font-weight:800}
 .data-badge.actual{color:var(--green);border-color:rgba(40,95,46,.25);background:var(--green-08)}
 .mix-visual{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:46% 54%;align-items:center;gap:12px}
-.mix-visual-large{grid-template-columns:50% 50%;gap:16px}
 .mix-donut{width:min(190px,100%);aspect-ratio:1;border-radius:50%;margin:auto;position:relative;background:conic-gradient(var(--line) 0 100%);box-shadow:0 0 0 1px rgba(37,43,42,.06),0 14px 30px -14px rgba(37,43,42,.20)}
 .mix-donut:after{content:"";position:absolute;inset:25%;border-radius:50%;background:var(--panel-a);border:2px solid #fff}
 .mix-donut-large{width:min(290px,100%)}
@@ -195,7 +184,6 @@ h2{display:block;margin:0;font-family:var(--font-display);font-size:16px;font-we
 .mix-mw{grid-column:2/4;font-size:9px;color:var(--text-faint);margin-top:2px;line-height:1.1}
 
 /* ---------- ruta 3 · local clock ---------- */
-.clock-panel-content{align-items:center;justify-content:center}
 #physical{background-color:var(--bg)}
 #physical .content{
   position:relative;isolation:isolate;
@@ -205,7 +193,6 @@ h2{display:block;margin:0;font-family:var(--font-display);font-size:16px;font-we
   border:1px solid var(--line-strong);
 }
 #physical .clock-display{position:relative;z-index:2;text-shadow:0 6px 30px rgba(0,0,0,.85)}
-/* Tid-rutan är renodlad: bilden och klockan fyller hela rutan. */
 #physical{padding:0}
 #physical .head,#physical .foot{display:none}
 #physical .content{width:100%;height:100%;flex:1 1 auto;border-radius:var(--r-panel);border:0}
@@ -236,7 +223,6 @@ h2{display:block;margin:0;font-family:var(--font-display);font-size:16px;font-we
 
 .foot{position:absolute;left:18px;right:18px;bottom:10px;display:flex;justify-content:space-between;color:var(--text-faint);font-size:9px;letter-spacing:.01em;z-index:1}
 
-/* ---------- unified dashboard chrome ---------- */
 .panel:before{display:none}
 
 h2,
@@ -262,7 +248,6 @@ h2,
   border-bottom-color:var(--line-soft);
 }
 
-/* Status is semantic, not panel-specific */
 .badge{
   color:var(--green);
   background:var(--green-08);
@@ -289,7 +274,6 @@ h2,
   border-color:rgba(238,128,28,.30);
 }
 
-/* Neutral cards: no panel gets its own background identity */
 #areaCards .card,
 #areaCards .card:nth-child(1),
 #areaCards .card:nth-child(2),
@@ -298,7 +282,6 @@ h2,
   background:var(--card-a);
 }
 
-/* Area identity is carried by the data itself, not by the panel */
 #areaCards .card:nth-child(1),
 #areaCards .card:nth-child(2),
 #areaCards .card:nth-child(3),
@@ -314,7 +297,6 @@ h2,
 #areaCards .card:nth-child(3) .label{color:var(--text-dim)}
 #areaCards .card:nth-child(4) .label{color:var(--text-dim)}
 
-/* KPI colors are data semantics, not panel colors */
 #balance .hero>div:nth-child(1) .v,
 #balance .hero>div:nth-child(2) .v{
   color:var(--text);
@@ -323,7 +305,6 @@ h2,
 #balance .hero>div:nth-child(2):before{background:var(--orange)}
 
 
-/* Brighter production-mix presentation using only the supplied palette */
 #system .mix-card{
   background:linear-gradient(180deg,#ffffff 0%,#fbfcfa 100%);
 }
@@ -331,7 +312,6 @@ h2,
   box-shadow:0 0 0 1px rgba(37,43,42,.05),0 16px 34px -16px rgba(37,43,42,.22);
 }
 #system .mix-center b{color:var(--wind)}
-/* Keep the clock neutral; its photo may remain visually distinctive. */
 #physical .head{border-bottom-color:var(--line-soft)}
 
 /* ---------- layout switcher ---------- */
@@ -395,13 +375,8 @@ body.layout-1x2 .dashboard-chrome .data-health{display:block}
   box-shadow:0 2px 7px rgba(37,43,42,.20);
 }
 
-/* 1x2 = two physical screens stacked vertically.
-   Upper screen: Day-ahead + System frequency side by side.
-   Lower screen: mFRR full width, with its existing internal proportions untouched. */
 #app.layout-1x2{
   grid-template-columns:1fr;
-  /* One physical upper screen: ~70% Day-ahead + ~30% frequency.
-     Lower physical screen remains 50% mFRR. */
   grid-template-rows:7.5fr 2.5fr 10fr;
 }
 #app.layout-1x2 #market{
@@ -426,14 +401,14 @@ body.layout-1x2 .dashboard-chrome .data-health{display:block}
 
 
 #system .mfrr-title{text-transform:none}
-\n/* ---------- tuned 1x2 upper screen ---------- */
+
+/* ---------- 1x2 layout ---------- */
 .freq-inline{display:none}
 
 #app.layout-1x2{
   gap:0;
 }
 
-/* Tight, continuous upper physical screen. */
 #app.layout-1x2 #market,
 #app.layout-1x2 #balance{
   padding:7px 12px 15px;
@@ -442,7 +417,6 @@ body.layout-1x2 .dashboard-chrome .data-health{display:block}
   border-left:1px solid var(--line);
   border-right:1px solid var(--line);
 }
-/* Day-ahead + frequency are one continuous physical screen: no panel seam. */
 #app.layout-1x2 #market{
   border-top:1px solid var(--line);
   border-bottom:0;
@@ -468,7 +442,6 @@ body.layout-1x2 .dashboard-chrome .data-health{display:block}
   gap:5px;
 }
 
-/* Day-ahead heading and cards: compact, but keep the price itself prominent. */
 #app.layout-1x2 #market h2,
 #app.layout-1x2 #balance h2,
 #app.layout-1x2 #system h2{
@@ -514,7 +487,6 @@ body.layout-1x2 .dashboard-chrome .data-health{display:block}
   margin-top:0;
 }
 
-/* Give the price chart the recovered vertical space. */
 #app.layout-1x2 #market .card.flex-fill{
   padding:3px 0 0;
   gap:3px;
@@ -1636,7 +1608,6 @@ async function mfrr(){
     }
     const rows=mergeENTSOEmFRR(parts.flat()).filter(r=>r.t.getTime()<=Date.now()+60000);
     if(!rows.length) throw Error('inga realiserade mFRR-rader från ENTSO-E');
-    const latest={};
     for(const a of mfrrAreas){
       const candidates=rows.filter(r=>r.a===a && (Number.isFinite(r.up)||Number.isFinite(r.down))).sort((x,y)=>y.t-x.t);
       if(candidates.length){
@@ -1645,7 +1616,6 @@ async function mfrr(){
         if(!mfrrAreaLatest[a] || z.t.getTime() >= mfrrAreaLatest[a].t.getTime()){
           mfrrAreaLatest[a]=z;
         }
-        latest[a]=mfrrAreaLatest[a];
       }
     }
     const times=Object.values(mfrrAreaLatest).map(z=>z.t.getTime()).filter(Number.isFinite);
@@ -1669,10 +1639,7 @@ async function mfrr(){
       const latestStart=new Date(globalLatestMs);
       const latestEnd=new Date(latestStart.getTime()+15*60*1000);
       $('mfrrKpiOutcomeTime').textContent=`${q(latestStart)}–${q(latestEnd)}`;
-      console.info('[mFRR] Senaste period per område:',Object.fromEntries(mfrrAreas.map(a=>[a,mfrrAreaLatest[a]?q(mfrrAreaLatest[a].t)+'–'+q(new Date(mfrrAreaLatest[a].t.getTime()+15*60000)):'saknas'])));
-    }
-    // Byt bara ut områden som faktiskt fick ett giltigt svar. Ett tillfälligt
-    // timeout/fel för SE2 eller SE3 får därför inte tömma deras redan laddade historik.
+          }
     const successfulAreas=[...new Set(rows.map(r=>r.a))];
     const oldByArea=new Map();
     for(const r of mfrrRowsCache) oldByArea.set(r.a+'|'+r.t.getTime(),r);
@@ -1681,7 +1648,6 @@ async function mfrr(){
     }
     for(const r of rows) oldByArea.set(r.a+'|'+r.t.getTime(),r);
     mfrrRowsCache=Array.from(oldByArea.values()).sort((a,b)=>a.t-b.t);
-    // Keep the per-area latest pointer aligned with the retained cache.
     for(const a of mfrrAreas){
       const c=mfrrRowsCache.filter(r=>r.a===a && (Number.isFinite(r.up)||Number.isFinite(r.down))).sort((x,y)=>y.t-x.t);
       if(c.length && (!mfrrAreaLatest[a] || c[0].t.getTime()>mfrrAreaLatest[a].t.getTime())) mfrrAreaLatest[a]=c[0];
@@ -1692,16 +1658,12 @@ async function mfrr(){
     status('systemStatus',payload.cached?'LIVE · CACHE':'LIVE','ok',payload.cached?'Visar senast lyckade ENTSO-E-data medan ny hämtning väntar eller delvis misslyckades.':'Senast lyckad ENTSO-E-hämtning.');
   }catch(e){
     console.warn('ENTSO-E mFRR:',e);
-    // Vid kallstart: försök igen efter 15 s om första ENTSO-E-hämtningen misslyckades.
-    // Den vanliga uppdateringen ligger kvar på 5 minuter.
     if(!mfrrRowsCache.length && !window.mfrrStartupRetry){
       window.mfrrStartupRetry=true;
       setTimeout(()=>{ window.mfrrStartupRetry=false; mfrr(); },15000);
     }
     const msg=String(e?.message||e);
     systemFailCount++;
-    // A temporary ENTSO-E failure should not make an already working dashboard look dead.
-    // Keep verified data and let the next minute try again.
     if(mfrrRowsCache.length){
       rendermFRRArea();
       status('systemStatus','LIVE · CACHE','stale',`Senaste lyckade EAM-data visas. Försök ${systemFailCount} misslyckades.`);
@@ -1771,7 +1733,6 @@ async function frequency(){
 }
 
 function swedishDateTimeShort(d=new Date()){const days=['Sön.','Mån.','Tis.','Ons.','Tor.','Fre.','Lör.'];const months=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];const dd=String(d.getDate()).padStart(2,'0');return `${days[d.getDay()]} ${dd} ${months[d.getMonth()]}`}
-function swedishDateTime(d=new Date()){const days=['Sön.','Mån.','Tis.','Ons.','Tor.','Fre.','Lör.'];const months=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];const dd=String(d.getDate()).padStart(2,'0');const hh=String(d.getHours()).padStart(2,'0');const mm=String(d.getMinutes()).padStart(2,'0');const ss=String(d.getSeconds()).padStart(2,'0');return `${days[d.getDay()]} ${dd} ${months[d.getMonth()]} ${hh}:${mm}:${ss}`}
 function clock(){const d=new Date();$('clockDate').textContent=swedishDateTimeShort(d);$('clockMain').textContent=d.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}
 clock();setInterval(clock,1000);prices();mfrr();frequency();
 setInterval(prices,900000);
@@ -1779,19 +1740,12 @@ setInterval(mfrr,300000);
 setInterval(()=>{mfrrAreaIndex=(mfrrAreaIndex+1)%4;rendermFRRArea()},7000);
 setInterval(frequency,5000);
 
-// Visa frekvensen sekund för sekund ur den lokala bufferten.
-// API-data hämtas var 5:e sekund och varje svar innehåller 1-sekundspunkter.
-// Displaypositionen styrs av timestamp, inte array-index, så en ny hämtning
-// som trimmar bufferten kan inte få graf/KPI att hoppa 5 sekunder.
-// Dashboarden ligger cirka 8 sekunder efter realtid.
 setInterval(()=>{
   if(!Array.isArray(state.freq)||!state.freq.length)return;
 
   const target=Date.now()-8000;
   const periodMs=Number(state.freqPeriodMs||1000);
 
-  // Första gången: börja vid senaste tillgängliga punkt som ligger
-  // minst 8 sekunder efter realtid.
   if(!Number.isFinite(state.freqDisplayTime?.getTime())){
     let initial=null;
 
@@ -1805,9 +1759,6 @@ setInterval(()=>{
     if(!initial)return;
     state.freqDisplayTime=new Date(initial.t);
   }else{
-    // Flytta exakt en faktisk datapunkt framåt per sekund.
-    // Vi letar på timestamp, inte på array-index, eftersom state.freq
-    // kan ha fått nya data och samtidigt trimmats i andra änden.
     const currentMs=state.freqDisplayTime.getTime();
     const nextTarget=currentMs+periodMs;
 
