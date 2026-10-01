@@ -601,8 +601,6 @@ body.layout-1x2 .dashboard-chrome .data-health{display:block}
   bottom:4px;
   font-size:7px;
 }
-/* Source/sync footer is unnecessary in the compact 1x2 view.
-   Keep it in 2x2 where there is more room for context. */
 #app.layout-1x2 #market .foot{
   display:none;
 }
@@ -1252,8 +1250,7 @@ async function prices(){
     }
     markSync('market','marketUpdated','Synkad');
   }catch(e){
-    // Never blank route 1 because a refresh failed. Keep the last verified dataset visible.
-    if(state.prices && Object.keys(state.prices).length){
+        if(state.prices && Object.keys(state.prices).length){
       renderPrices();
     }
     refreshStatus('market','marketStatus','Elprisetjustnu');
@@ -1274,9 +1271,7 @@ const ENTSOE_AREAS = {
 const ENTSOE_PROXY = '/api/entsoe/mfrr';
 function entsoePeriod(){
   const now = new Date();
-  // Hämta hela innevarande lokala dygnets mFRR-historik varje gång.
-  // ENTSO-E använder UTC i API:t, medan dashboarden visar svensk lokal tid.
-  const from = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const from = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const to = new Date(now.getTime() + 30*60*1000);
   const f=d=>d.getUTCFullYear()
     +String(d.getUTCMonth()+1).padStart(2,'0')
@@ -1612,8 +1607,7 @@ async function mfrr(){
       const candidates=rows.filter(r=>r.a===a && (Number.isFinite(r.up)||Number.isFinite(r.down))).sort((x,y)=>y.t-x.t);
       if(candidates.length){
         const z=candidates[0];
-        // Never let a late/out-of-order ENTSO-E response move an area backwards.
-        if(!mfrrAreaLatest[a] || z.t.getTime() >= mfrrAreaLatest[a].t.getTime()){
+                if(!mfrrAreaLatest[a] || z.t.getTime() >= mfrrAreaLatest[a].t.getTime()){
           mfrrAreaLatest[a]=z;
         }
       }
