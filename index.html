@@ -838,9 +838,7 @@ body.layout-1x2 .dashboard-chrome .data-health{display:block}
   </video>
   <div class="startup-wash"></div>
   <div class="startup-content">
-    <div class="startup-kicker">THE JUICE</div>
-    <div class="startup-title">Live energy system</div>
-    <div class="startup-status" id="startupStatus">Ansluter till live-data · 0/3 system live</div>
+    <div class="startup-status" id="startupStatus">Ansluter</div>
   </div>
 </div>
 <div class="dashboard-chrome">
@@ -957,11 +955,7 @@ function startupIsReady(){
 }
 function updateStartupStatus(){
   const e=$('startupStatus');
-  if(!e)return;
-  const count=startupLiveCount();
-  e.textContent=count===3
-    ?'Alla system live · startar dashboard'
-    :`Ansluter till live-data · ${count}/3 system live`;
+  if(e)e.textContent='Ansluter';
 }
 function finishStartup(){
   if(window.__juiceStartupFinished)return;
