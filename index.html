@@ -187,17 +187,30 @@ h2{display:block;margin:0;font-family:var(--font-display);font-size:16px;font-we
 #physical{background-color:var(--bg)}
 #physical .content{
   position:relative;isolation:isolate;
-  background-image:linear-gradient(180deg,rgba(10,14,18,.12) 0%,rgba(10,14,18,.32) 65%,rgba(10,14,18,.56) 100%),url("energy-scene-bg-white.png");
-  background-size:cover;background-position:center;background-repeat:no-repeat;
+  background:var(--bg);
   border-radius:var(--r-card);overflow:hidden;padding-top:0;
   border:1px solid var(--line-strong);
 }
-#physical .clock-display{position:relative;z-index:2;text-shadow:0 6px 30px rgba(0,0,0,.85)}
+#physical .content::before{
+  content:"";
+  position:absolute;inset:0;
+  z-index:1;pointer-events:none;
+  background:rgba(255,255,255,.58);
+}
+#physical .clock-video{
+  position:absolute;inset:0;
+  width:100%;height:100%;
+  object-fit:cover;
+  object-position:center;
+  z-index:0;
+  filter:saturate(.88) brightness(1.04);
+}
+#physical .clock-display{position:relative;z-index:2;text-shadow:0 4px 22px rgba(255,255,255,.92),0 2px 10px rgba(0,0,0,.18)}
 #physical{padding:0}
 #physical .head,#physical .foot{display:none}
 #physical .content{width:100%;height:100%;flex:1 1 auto;border-radius:var(--r-panel);border:0;align-items:center;justify-content:center}
 
-#physical .clock-date,#physical .clock-time{color:#f4f7f6}
+#physical .clock-date,#physical .clock-time{color:var(--wind)}
 .clock-display{text-align:center}
 .clock-date{font-family:var(--font-display);font-size:19px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--text-dim)}
 .clock-time{font-family:var(--font-display);font-size:76px;font-weight:600;line-height:1.05;letter-spacing:.005em;color:var(--text);margin-top:12px}
@@ -781,6 +794,9 @@ body.layout-1x2 .dashboard-chrome .data-health{display:block}
 <section class="panel" id="physical">
   <div class="head"><div><h2>Tid</h2><div class="sub"> </div></div><div class="badge ok">LIVE</div></div>
   <div class="content clock-panel-content">
+    <video class="clock-video" autoplay muted loop playsinline preload="auto" aria-hidden="true">
+      <source src="assets/videos/Firefly_Veo_Bring world and energy system to 477116 N2L.mp4" type="video/mp4">
+    </video>
     <div class="clock-display"><div class="clock-date" id="clockDate">—</div><div class="clock-time" id="clockMain">—</div></div>
   </div>
   <div class="foot"><span>Lokal systemtid</span><span>Uppdateras varje sekund</span></div>
