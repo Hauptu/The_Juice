@@ -328,6 +328,81 @@ h2,
 #physical .head{border-bottom-color:var(--line-soft)}
 
 /* ---------- layout switcher ---------- */
+#app{
+  opacity:0;
+  transition:opacity .95s cubic-bezier(.22,.61,.36,1);
+}
+#app.dashboard-ready{
+  opacity:1;
+}
+#startupScreen{
+  position:fixed;
+  inset:0;
+  z-index:5000;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  background:var(--bg) url("energy-scene-bg-white.png") center/cover no-repeat;
+  opacity:1;
+  transition:opacity .95s cubic-bezier(.22,.61,.36,1);
+}
+#startupScreen.is-leaving{
+  opacity:0;
+  pointer-events:none;
+}
+#startupScreen.is-hidden{
+  display:none;
+}
+#startupScreen .startup-video{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center;
+  z-index:0;
+  filter:saturate(.88) brightness(1.04);
+}
+#startupScreen .startup-wash{
+  position:absolute;
+  inset:0;
+  z-index:1;
+  background:rgba(255,255,255,.58);
+}
+#startupScreen .startup-content{
+  position:relative;
+  z-index:2;
+  text-align:center;
+  color:var(--wind);
+  transform:translateY(-2vh);
+  text-shadow:0 4px 22px rgba(255,255,255,.92);
+}
+#startupScreen .startup-kicker{
+  font-family:var(--font-body);
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.22em;
+  margin-left:.22em;
+  text-transform:uppercase;
+}
+#startupScreen .startup-title{
+  margin-top:10px;
+  font-family:var(--font-display);
+  font-size:clamp(30px,4vw,58px);
+  font-weight:600;
+  letter-spacing:-.025em;
+}
+#startupScreen .startup-status{
+  margin-top:18px;
+  font-family:var(--font-body);
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:.055em;
+  text-transform:uppercase;
+  color:var(--text-dim);
+}
+
 .dashboard-chrome{
   position:fixed;
   top:12px;
@@ -757,6 +832,17 @@ body.layout-1x2 .dashboard-chrome .data-health{display:block}
 </style>
 </head>
 <body>
+<div id="startupScreen" aria-label="The Juice startar">
+  <video class="startup-video" autoplay muted loop playsinline preload="auto" aria-hidden="true">
+    <source src="assets/videos/Firefly_Veo_Bring world and energy system to 477116 N2L.mp4" type="video/mp4">
+  </video>
+  <div class="startup-wash"></div>
+  <div class="startup-content">
+    <div class="startup-kicker">THE JUICE</div>
+    <div class="startup-title">Live energy system</div>
+    <div class="startup-status" id="startupStatus">Ansluter till live-data · 0/3 system live</div>
+  </div>
+</div>
 <div class="dashboard-chrome">
   <div class="data-health" id="dataHealth" title="Datastatus" aria-label="Datastatus"></div>
   <div class="layout-toggle" aria-label="Dashboardlayout">
@@ -862,6 +948,51 @@ function updateDataHealth(){
 function status(id,text,kind='ok',title=''){const e=$(id);e.textContent=text;e.className='badge '+kind;e.title=title;updateDataHealth()}
 function stamp(id,d,label='Synkad'){ $(id).textContent=d?(`${label} ${timeSec(d)}`):'—'}
 function markSync(key,id,label='Synkad'){state.sync[key]=Date.now();stamp(id,state.sync[key],label)}
+function startupLiveCount(){
+  const ids=['marketStatus','freqStatus','systemStatus'];
+  return ids.filter(id=>$(id)?.classList.contains('ok')).length;
+}
+function startupIsReady(){
+  return startupLiveCount()===3;
+}
+function updateStartupStatus(){
+  const e=$('startupStatus');
+  if(!e)return;
+  const count=startupLiveCount();
+  e.textContent=count===3
+    ?'Alla system live · startar dashboard'
+    :`Ansluter till live-data · ${count}/3 system live`;
+}
+function finishStartup(){
+  if(window.__juiceStartupFinished)return;
+  window.__juiceStartupFinished=true;
+  const screen=$('startupScreen');
+  const app=$('app');
+  if(app)app.classList.add('dashboard-ready');
+  if(screen){
+    screen.classList.add('is-leaving');
+    setTimeout(()=>screen.classList.add('is-hidden'),1000);
+  }
+}
+function initStartupScreen(){
+  updateStartupStatus();
+  const started=Date.now();
+  const poll=setInterval(()=>{
+    updateStartupStatus();
+    if(startupIsReady()){
+      clearInterval(poll);
+      finishStartup();
+    }
+  },100);
+  setTimeout(()=>{
+    clearInterval(poll);
+    if(!window.__juiceStartupFinished){
+      updateStartupStatus();
+      finishStartup();
+    }
+  },12000);
+}
+
 function refreshStatus(key,id,source){
   const successAt=key==='market'?state.marketLastSuccess:state.sync[key];
   if(key==='system' && systemFailCount>0 && !state.sync.system && (Date.now()-systemLastAttempt)<30000){
@@ -1744,6 +1875,7 @@ async function frequency(){
 
 function swedishDateTimeShort(d=new Date()){const days=['Sön.','Mån.','Tis.','Ons.','Tor.','Fre.','Lör.'];const months=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];const dd=String(d.getDate()).padStart(2,'0');return `${days[d.getDay()]} ${dd} ${months[d.getMonth()]}`}
 function clock(){const d=new Date();$('clockDate').textContent=swedishDateTimeShort(d);$('clockMain').textContent=d.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}
+initStartupScreen();
 clock();setInterval(clock,1000);prices();mfrr();frequency();
 setInterval(prices,900000);
 setInterval(mfrr,300000);
