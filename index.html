@@ -1060,8 +1060,8 @@ layoutButtons.forEach(btn=>btn.addEventListener('click',()=>setDashboardLayout(b
 themeButtons.forEach(btn=>btn.addEventListener('click',()=>setDashboardTheme(btn.dataset.theme)));
 
 setDashboardLayout(localStorage.getItem('juice-dashboard-layout')||'2x2',false);
-setDashboardTheme(localStorage.getItem('juice-dashboard-theme')||'light',false);
 const state={prices:{},systemHistory:[],freq:[],sync:{market:0,system:0,freq:0},marketLastSuccess:0};
+setDashboardTheme(localStorage.getItem('juice-dashboard-theme')||'light',false);
 const SYNC_MAX={market:1200000,system:1200000,freq:20000};
 const attempted={market:false,system:false,freq:false};
 let systemFailCount=0,systemLastAttempt=0;
