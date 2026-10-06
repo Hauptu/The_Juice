@@ -415,6 +415,12 @@ body.dark-mode #startupScreen .startup-status{color:#b2beb8}
 #app{
   opacity:0;
   transition:opacity .95s cubic-bezier(.22,.61,.36,1);
+  /* Hard CSS failsafe: even if JavaScript/API startup fails, never leave
+     the dashboard permanently behind the startup screen. */
+  animation:dashboardStartupFailsafe .01s linear 10s forwards;
+}
+@keyframes dashboardStartupFailsafe{
+  to{opacity:1}
 }
 #app.dashboard-ready{
   opacity:1;
@@ -422,6 +428,8 @@ body.dark-mode #startupScreen .startup-status{color:#b2beb8}
 #startupScreen{
   position:fixed;
   inset:0;
+  /* Independent fallback in case the startup JavaScript never completes. */
+  animation:startupScreenFailsafe .01s linear 10s forwards;
   z-index:5000;
   display:flex;
   align-items:center;
@@ -434,6 +442,13 @@ body.dark-mode #startupScreen .startup-status{color:#b2beb8}
 #startupScreen.is-leaving{
   opacity:0;
   pointer-events:none;
+}
+@keyframes startupScreenFailsafe{
+  to{
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+  }
 }
 #startupScreen.is-hidden{
   display:none;
