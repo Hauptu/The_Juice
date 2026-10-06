@@ -1503,8 +1503,39 @@ function attachPriceHover(){
   svg.addEventListener('mouseleave',()=>{tip.style.display='none';line.style.display='none'});
 }
 
+function getCurrentPriceEntries(){
+  return A.map(a=>{
+    const e=parseEntries(a),i=nextIdx(e);
+    return {a,e,i,x:e[i]};
+  });
+}
+
+function updateCurrentPriceCards(){
+  const cur=getCurrentPriceEntries();
+  const cards=document.querySelectorAll('#areaCards .card');
+
+  cur.forEach((o,i)=>{
+    const card=cards[i];
+    if(!card)return;
+
+    const priceEl=card.querySelector('.price');
+    const timeEl=card.querySelector('.time');
+    if(priceEl){
+      priceEl.classList.toggle('down',!!o.x&&o.x.v<0);
+      priceEl.classList.toggle('up',!o.x||o.x.v>=0);
+      priceEl.firstChild.textContent=o.x?fmt(o.x.v):'—';
+    }
+    if(timeEl)timeEl.textContent=o.x?time(o.x.start)+'–'+time(o.x.end):'—';
+  });
+
+  const marketStatus=$('marketStatus');
+  if(marketStatus)marketStatus.title=`Aktuell kvart: ${cur[0]?.x?timeSec(cur[0].x.start):'—'}`;
+
+  return cur;
+}
+
 function renderPrices(){
-  const cur=A.map(a=>{const e=parseEntries(a),i=nextIdx(e);return {a,e,i,x:e[i]}});
+  const cur=getCurrentPriceEntries();
   $('areaCards').innerHTML=cur.map(o=>`<div class="card"><div class="label">${o.a}</div><div class="price ${o.x?.v<0?'down':'up'}">${o.x?fmt(o.x.v):'—'}<span class="unit">SEK/MWh</span></div><div class="time">${o.x?time(o.x.start)+'–'+time(o.x.end):'—'}</div></div>`).join('');
   const priceWindowTitle=$('priceWindowTitle');
   if(priceWindowTitle){
@@ -1515,6 +1546,17 @@ function renderPrices(){
   $('priceChart').innerHTML=chart;
   attachPriceHover();
   return cur;
+}
+
+function schedulePriceQuarterUpdate(){
+  const now=Date.now();
+  const nextQuarter=Math.floor(now/(15*60*1000)+1)*15*60*1000;
+  const delay=Math.max(250,nextQuarter-now+1000);
+
+  setTimeout(()=>{
+    updateCurrentPriceCards();
+    schedulePriceQuarterUpdate();
+  },delay);
 }
 
 async function prices(){
@@ -2026,6 +2068,7 @@ function swedishDateTimeShort(d=new Date()){const days=['Sön.','Mån.','Tis.','
 function clock(){const d=new Date();$('clockDate').textContent=swedishDateTimeShort(d);$('clockMain').textContent=d.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}
 initStartupScreen();
 clock();setInterval(clock,1000);prices();mfrr();frequency();
+schedulePriceQuarterUpdate();
 setInterval(prices,900000);
 setInterval(mfrr,300000);
 setInterval(()=>{mfrrAreaIndex=(mfrrAreaIndex+1)%4;rendermFRRArea()},7000);
