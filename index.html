@@ -327,6 +327,85 @@ h2,
 #system .mix-center b{color:var(--wind)}
 #physical .head{border-bottom-color:var(--line-soft)}
 
+/* ---------- dark mode ---------- */
+body.dark-mode{
+  --bg:#0f1412;
+  --panel-a:#171d1a;
+  --panel-b:#141a17;
+  --card-a:#1b221f;
+  --card-b:#161c19;
+  --line:#34403b;
+  --line-soft:#28322e;
+  --line-strong:#4a5751;
+  --text:#edf3ef;
+  --text-dim:#aebbb5;
+  --text-faint:#7f8c86;
+  --wind:#e2e9e5;
+  --green:#73bd82;
+  --orange:#f29a48;
+  --yellow:#e9c45b;
+  --blue:#78aec7;
+  --orange-08:rgba(242,154,72,.10);
+  --blue-06:rgba(120,174,199,.10);
+  --wind-08:rgba(226,233,229,.08);
+  --green-08:rgba(115,189,130,.10);
+  --yellow-10:rgba(233,196,91,.11);
+  background-color:var(--bg);
+  color:var(--text);
+  background-image:
+    linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
+}
+body.dark-mode .panel{box-shadow:0 10px 28px -20px rgba(0,0,0,.70)}
+body.dark-mode .card{box-shadow:0 4px 16px -14px rgba(0,0,0,.70)}
+body.dark-mode .chart{background:var(--card-b);border-color:var(--line-soft)}
+body.dark-mode .head,
+body.dark-mode #market .head,
+body.dark-mode #balance .head,
+body.dark-mode #physical .head,
+body.dark-mode #system .head{border-bottom-color:var(--line-soft)}
+body.dark-mode .layout-toggle{
+  background:rgba(23,29,26,.94);
+  border-color:var(--line);
+  box-shadow:0 8px 22px -14px rgba(0,0,0,.80);
+}
+body.dark-mode .layout-toggle button:hover{color:var(--text)}
+body.dark-mode .layout-toggle button.active{
+  background:#edf3ef;
+  color:#17201c;
+  box-shadow:0 2px 8px rgba(0,0,0,.35);
+}
+body.dark-mode .toggle-divider{background:var(--line)}
+body.dark-mode .axis,
+body.dark-mode .freq-zone-axis,
+body.dark-mode .freq-zone-axis-opt,
+body.dark-mode .freq-x-axis,
+body.dark-mode .mfrr-y-axis{fill:var(--text-faint)}
+body.dark-mode .freq-y-label{color:var(--text-faint)}
+body.dark-mode .freq-y-label.opt{color:var(--text-dim)}
+body.dark-mode .gridline{stroke:#303b36}
+body.dark-mode .xtick{stroke:var(--line)}
+body.dark-mode .nowline,
+body.dark-mode .mfrr-hover-line{stroke:#dce6e1}
+body.dark-mode .freq-optimum{stroke:var(--green)}
+body.dark-mode .freq-trace{stroke:#dbe5e0}
+body.dark-mode .freq-hover-dot{stroke:#17201c}
+body.dark-mode .mfrr-imbalance-marker{fill:#dce6e1;stroke:#17201c}
+body.dark-mode #system .mix-card{background:linear-gradient(180deg,#1b221f 0%,#161c19 100%)}
+body.dark-mode #system .mix-item{background:#1a211e;border-color:var(--line-soft)}
+body.dark-mode #system .mix-donut:after{background:var(--panel-a);border-color:var(--line)}
+body.dark-mode #physical .content{background:var(--bg);border-color:var(--line-strong)}
+body.dark-mode #physical .content::before{background:rgba(7,11,9,.64)}
+body.dark-mode #physical .clock-video{filter:saturate(.72) brightness(.62)}
+body.dark-mode #physical .clock-display{text-shadow:0 4px 22px rgba(0,0,0,.78),0 2px 10px rgba(0,0,0,.45)}
+body.dark-mode #physical .clock-date,
+body.dark-mode #physical .clock-time{color:#f1f5f2}
+body.dark-mode #startupScreen{background-color:var(--bg)}
+body.dark-mode #startupScreen .startup-wash{background:rgba(7,11,9,.68)}
+body.dark-mode #startupScreen .startup-video{filter:saturate(.72) brightness(.62)}
+body.dark-mode #startupScreen .startup-content{color:#f1f5f2;text-shadow:0 4px 22px rgba(0,0,0,.72)}
+body.dark-mode #startupScreen .startup-status{color:#b2beb8}
+
 /* ---------- layout switcher ---------- */
 #app{
   opacity:0;
@@ -441,6 +520,8 @@ body.layout-1x2 .dashboard-chrome .data-health{display:block}
   box-shadow:0 6px 18px -12px rgba(37,43,42,.45);
   backdrop-filter:blur(8px);
 }
+.layout-options,
+.theme-options{display:inline-flex;align-items:center;gap:2px}
 .layout-toggle button{
   appearance:none;
   border:0;
@@ -462,6 +543,8 @@ body.layout-1x2 .dashboard-chrome .data-health{display:block}
   color:#fff;
   box-shadow:0 2px 7px rgba(37,43,42,.20);
 }
+.theme-btn{min-width:27px;padding:7px 8px !important;font-size:14px !important;letter-spacing:0 !important}
+.toggle-divider{width:1px;height:18px;background:var(--line);opacity:.9}
 
 #app.layout-1x2{
   grid-template-columns:1fr;
@@ -843,10 +926,17 @@ body.layout-1x2 .dashboard-chrome .data-health{display:block}
 </div>
 <div class="dashboard-chrome">
   <div class="data-health" id="dataHealth" title="Datastatus" aria-label="Datastatus"></div>
-  <div class="layout-toggle" aria-label="Dashboardlayout">
-  <button type="button" data-layout="2x2" class="active" aria-pressed="true">2×2</button>
-  <button type="button" data-layout="1x2" aria-pressed="false">1×2</button>
-</div>
+  <div class="layout-toggle" aria-label="Dashboardinställningar">
+    <div class="layout-options" aria-label="Dashboardlayout">
+      <button type="button" data-layout="2x2" class="active" aria-pressed="true">2×2</button>
+      <button type="button" data-layout="1x2" aria-pressed="false">1×2</button>
+    </div>
+    <span class="toggle-divider" aria-hidden="true"></span>
+    <div class="theme-options" aria-label="Färgtema">
+      <button type="button" data-theme="light" class="theme-btn active" aria-label="Ljust läge" aria-pressed="true">☼</button>
+      <button type="button" data-theme="dark" class="theme-btn" aria-label="Mörkt läge" aria-pressed="false">☾</button>
+    </div>
+  </div>
 </div>
 <div id="app">
 <section class="panel" id="market">
@@ -904,7 +994,8 @@ body.layout-1x2 .dashboard-chrome .data-health{display:block}
 const $=id=>document.getElementById(id), A=['SE1','SE2','SE3','SE4'];
 
 const layoutToggle=document.querySelector('.layout-toggle');
-const layoutButtons=[...document.querySelectorAll('.layout-toggle button')];
+const layoutButtons=[...document.querySelectorAll('[data-layout]')];
+const themeButtons=[...document.querySelectorAll('[data-theme]')];
 
 function setDashboardLayout(layout,save=true){
   const mode=layout==='1x2'?'1x2':'2x2';
@@ -918,11 +1009,22 @@ function setDashboardLayout(layout,save=true){
   if(save) localStorage.setItem('juice-dashboard-layout',mode);
 }
 
-layoutButtons.forEach(btn=>{
-  btn.addEventListener('click',()=>setDashboardLayout(btn.dataset.layout));
-});
+function setDashboardTheme(theme,save=true){
+  const mode=theme==='dark'?'dark':'light';
+  document.body.classList.toggle('dark-mode',mode==='dark');
+  themeButtons.forEach(btn=>{
+    const active=btn.dataset.theme===mode;
+    btn.classList.toggle('active',active);
+    btn.setAttribute('aria-pressed',active?'true':'false');
+  });
+  if(save) localStorage.setItem('juice-dashboard-theme',mode);
+}
+
+layoutButtons.forEach(btn=>btn.addEventListener('click',()=>setDashboardLayout(btn.dataset.layout)));
+themeButtons.forEach(btn=>btn.addEventListener('click',()=>setDashboardTheme(btn.dataset.theme)));
 
 setDashboardLayout(localStorage.getItem('juice-dashboard-layout')||'2x2',false);
+setDashboardTheme(localStorage.getItem('juice-dashboard-theme')||'light',false);
 const state={prices:{},systemHistory:[],freq:[],sync:{market:0,system:0,freq:0},marketLastSuccess:0};
 const SYNC_MAX={market:1200000,system:1200000,freq:20000};
 const attempted={market:false,system:false,freq:false};
