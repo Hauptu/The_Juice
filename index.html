@@ -994,6 +994,19 @@ body.layout-1x2 .dashboard-chrome .data-health{display:block}
 </section>
 </div>
 <script>
+/* Independent startup failsafe: the dashboard must never remain on "Ansluter"
+   because a data/API/script error prevents the normal startup routine. */
+window.__juiceStartupFailsafe=setTimeout(()=>{
+  const app=document.getElementById('app');
+  const screen=document.getElementById('startupScreen');
+  if(app)app.classList.add('dashboard-ready');
+  if(screen){
+    screen.classList.add('is-leaving');
+    setTimeout(()=>screen.classList.add('is-hidden'),1000);
+  }
+},12000);
+</script>
+<script>
 
 
 const $=id=>document.getElementById(id), A=['SE1','SE2','SE3','SE4'];
@@ -1070,6 +1083,10 @@ function updateStartupStatus(){
 function finishStartup(){
   if(window.__juiceStartupFinished)return;
   window.__juiceStartupFinished=true;
+  if(window.__juiceStartupFailsafe){
+    clearTimeout(window.__juiceStartupFailsafe);
+    window.__juiceStartupFailsafe=null;
+  }
   const screen=$('startupScreen');
   const app=$('app');
   if(app)app.classList.add('dashboard-ready');
