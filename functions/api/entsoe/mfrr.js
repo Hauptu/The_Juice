@@ -20,6 +20,18 @@ export async function onRequestGet({ request, env }) {
     SE4: "10Y1001A1001A47J"
   };
 
+  // Normalize the ENTSO-E query to a 5-minute bucket so all dashboard users
+  // share one upstream result instead of each user triggering 8 ENTSO-E calls.
+  const requestedTo = new Date(to.slice(0,4)+"-"+to.slice(4,6)+"-"+to.slice(6,8)+"T"+to.slice(8,10)+":"+to.slice(10,12)+":00Z");
+  const bucketMs = 5*60*1000;
+  const bucketToDate = new Date(Math.floor(requestedTo.getTime()/bucketMs)*bucketMs);
+  const bucketTo =
+    bucketToDate.getUTCFullYear().toString()+
+    String(bucketToDate.getUTCMonth()+1).padStart(2,"0")+
+    String(bucketToDate.getUTCDate()).padStart(2,"0")+
+    String(bucketToDate.getUTCHours()).padStart(2,"0")+
+    String(bucketToDate.getUTCMinutes()).padStart(2,"0");
+
   // ENTSO-E returns A85 imbalance-price documents as ZIP archives in
   // some responses. Extract the XML without adding a third-party runtime
   // dependency; Cloudflare Workers expose DecompressionStream.
@@ -89,13 +101,13 @@ export async function onRequestGet({ request, env }) {
     const mfrrUrl = new URL("https://web-api.tp.entsoe.eu/api");
     for (const [k,v] of Object.entries({
       documentType:"A84", businessType:"A97", processType:"A16",
-      controlArea_Domain:eic, periodStart:from, periodEnd:to, securityToken:token
+      controlArea_Domain:eic, periodStart:from, periodEnd:bucketTo, securityToken:token
     })) mfrrUrl.searchParams.set(k,v);
 
     const imbalanceUrl = new URL("https://web-api.tp.entsoe.eu/api");
     for (const [k,v] of Object.entries({
       documentType:"A85",
-      controlArea_Domain:eic, periodStart:from, periodEnd:to, securityToken:token
+      controlArea_Domain:eic, periodStart:from, periodEnd:bucketTo, securityToken:token
     })) imbalanceUrl.searchParams.set(k,v);
 
     const headers = {
