@@ -157,6 +157,7 @@ h2{display:block;margin:0;font-family:var(--font-display);font-size:16px;font-we
 .price-hover .ph-row{display:flex;justify-content:space-between;gap:16px}
 .price-hover .ph-val{font-weight:700}
 .price-hover-line{stroke:var(--orange);stroke-width:1.2;stroke-dasharray:3 3;opacity:.95;pointer-events:none}
+.price-now-line{stroke:#0e7490;stroke-width:1.6;stroke-dasharray:4 3;opacity:.95;pointer-events:none}
 
 /* ---------- ruta 2 · production mix ---------- */
 .hero{display:grid;grid-template-columns:1.2fr 1.2fr 1fr;gap:10px;flex:0 0 auto}
@@ -392,6 +393,7 @@ body.dark-mode .gridline{stroke:#303b36}
 body.dark-mode .xtick{stroke:var(--line)}
 body.dark-mode .nowline,
 body.dark-mode .mfrr-hover-line{stroke:#dce6e1}
+body.dark-mode .price-now-line{stroke:#7fd8f2;stroke-width:1.8;opacity:1}
 body.dark-mode .freq-optimum{stroke:var(--green)}
 body.dark-mode .freq-trace{stroke:#b9c7c1}
 body.dark-mode .freq-hover-dot{stroke:#17201c}
@@ -1446,7 +1448,7 @@ function rollingPriceChart(){
     return `<path d="${d}" fill="none" stroke="${colors[si]}" stroke-width="2.4" vector-effect="non-scaling-stroke" stroke-linejoin="miter" stroke-linecap="square"/>`;
   }).join('');
   const nowX=Math.max(pl,Math.min(w-pr,x(now)));
-  const nowLine=`<line x1="${nowX}" y1="${pt}" x2="${nowX}" y2="${pt+plotH}" stroke="#0e7490" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+  const nowLine=`<line x1="${nowX}" y1="${pt}" x2="${nowX}" y2="${pt+plotH}" class="price-now-line"/>`;
   let labels='';
   const startDate=new Date(windowStart);
   const firstLabel=Math.ceil(windowStart/(2*hour))*(2*hour);
