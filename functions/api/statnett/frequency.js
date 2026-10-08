@@ -20,10 +20,17 @@ export async function onRequestGet({ request }) {
   const formatUTC = (date) =>
     date.toISOString().slice(0, 19) + "Z";
 
+  // All dashboard users share the same short-lived upstream cache.
+  // Normalize the requested window to a 5-second bucket so 10, 50 or 100
+  // open dashboards do not each trigger their own Statnett request.
+  const bucketMs = 5000;
+  const bucketTo = new Date(Math.floor(to.getTime() / bucketMs) * bucketMs);
+  const bucketFrom = new Date(bucketTo.getTime() - 30*60*1000);
+
   const url =
     "https://driftsdata.statnett.no/restapi/Frequency/BySecond" +
-    "?From=" + encodeURIComponent(formatUTC(from)) +
-    "&To=" + encodeURIComponent(formatUTC(to));
+    "?From=" + encodeURIComponent(formatUTC(bucketFrom)) +
+    "&To=" + encodeURIComponent(formatUTC(bucketTo));
 
   try {
     const r = await fetch(url, {
@@ -31,8 +38,8 @@ export async function onRequestGet({ request }) {
         "user-agent": "Krafthandel Dashboard"
       },
       cf: {
-        cacheTtl: 0,
-        cacheEverything: false
+        cacheTtl: 5,
+        cacheEverything: true
       }
     });
 
