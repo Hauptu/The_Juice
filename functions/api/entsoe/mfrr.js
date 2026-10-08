@@ -118,7 +118,10 @@ export async function onRequestGet({ request, env }) {
     const out = {area, mfrr:null, imbalance:null, mfrrError:null, imbalanceError:null};
 
     try {
-      const r = await fetch(mfrrUrl, {headers});
+      const r = await fetch(mfrrUrl, {
+        headers,
+        cf: { cacheTtl: 300, cacheEverything: true }
+      });
       out.mfrr = r.ok ? await r.text() : null;
       if (!r.ok) out.mfrrError = `HTTP ${r.status}`;
     } catch (e) {
@@ -126,7 +129,10 @@ export async function onRequestGet({ request, env }) {
     }
 
     try {
-      const r = await fetch(imbalanceUrl, {headers});
+      const r = await fetch(imbalanceUrl, {
+        headers,
+        cf: { cacheTtl: 300, cacheEverything: true }
+      });
       out.imbalance = r.ok ? await unzipXml(await r.arrayBuffer()) : null;
       if (!r.ok) out.imbalanceError = `HTTP ${r.status}`;
     } catch (e) {
