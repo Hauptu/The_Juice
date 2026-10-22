@@ -20,16 +20,12 @@ export async function onRequestGet({ request }) {
   const formatUTC = (date) =>
     date.toISOString().slice(0, 19) + "Z";
 
-  // Diagnostic test: keep the 5-second request-window alignment, but disable
-  // Cloudflare's upstream fetch cache to check whether it causes stale KPI values.
-  const bucketMs = 5000;
-  const bucketTo = new Date(Math.floor(to.getTime() / bucketMs) * bucketMs);
-  const bucketFrom = new Date(bucketTo.getTime() - 30*60*1000);
-
+  // Use the exact requested interval. Do not round the endpoint to 5-second
+  // buckets: this diagnostic checks whether that was making the feed appear stale.
   const url =
     "https://driftsdata.statnett.no/restapi/Frequency/BySecond" +
-    "?From=" + encodeURIComponent(formatUTC(bucketFrom)) +
-    "&To=" + encodeURIComponent(formatUTC(bucketTo));
+    "?From=" + encodeURIComponent(formatUTC(from)) +
+    "&To=" + encodeURIComponent(formatUTC(to));
 
   try {
     const r = await fetch(url, {
