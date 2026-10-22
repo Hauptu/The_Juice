@@ -1218,7 +1218,7 @@ function svgSingle(values,min,max,ref=null,endTime=null,periodMs=1000){
   const compactFreq=document.getElementById('app')?.classList.contains('layout-1x2');
   // Use tidy, predictable labels rather than exposing awkward dynamic endpoints.
   // Tight scales use 0.02 Hz steps; wider scales use 0.05 Hz steps.
-  const axisStep=range<=0.16?0.02:0.05;
+  const axisStep=range<=0.16?0.05:0.10;
   const firstAxisTick=Math.ceil(zMin/axisStep)*axisStep;
   const axisValues=[];
   for(let v=firstAxisTick;v<=zMax+1e-9;v+=axisStep){
