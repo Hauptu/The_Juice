@@ -1169,17 +1169,24 @@ function svgSingle(values,min,max,ref=null,endTime=null,periodMs=1000){
   const w=760,h=260,pL=48,pR=12,pT=12,pB=24;
   const plotW=w-pL-pR, plotH=h-pT-pB;
 
-  // Dynamisk y-skala kring de faktiska värdena.
-  const maxDev=Math.max(0.02,...points.map(p=>Math.abs(p.value-50)).filter(Number.isFinite));
-  const range=Math.max(0.15,maxDev+0.03);
+  const endMs=endTime?.getTime()||points[points.length-1].t;
+  const startMs=endMs-30*60*1000;
+  const visiblePoints=points.filter(p=>p.t>=startMs&&p.t<=endMs);
+
+  // Dynamisk y-skala baserad på värdena som faktiskt syns i 30-minutersfönstret.
+  // Behåll minst ±0,04 Hz runt 50 Hz och lägg till 0,01 Hz marginal
+  // utanför största avvikelsen, så små variationer syns tydligare utan att
+  // större frekvensrörelser klipps bort.
+  const maxDev=Math.max(
+    0,
+    ...visiblePoints.map(p=>Math.abs(p.value-50)).filter(Number.isFinite)
+  );
+  const range=Math.max(0.04,maxDev+0.01);
   const zMin=50-range;
   const zMax=50+range;
 
   const y=v=>pT+(zMax-v)/(zMax-zMin)*plotH;
 
-  const endMs=endTime?.getTime()||points[points.length-1].t;
-  const startMs=endMs-30*60*1000;
-  const visiblePoints=points.filter(p=>p.t>=startMs&&p.t<=endMs);
   const x=t=>pL+(t-startMs)/(30*60*1000)*plotW;
 
   const zone=(lo,hi,fill,op)=>{
