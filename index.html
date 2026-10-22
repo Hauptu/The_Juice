@@ -1306,15 +1306,19 @@ function addFrequencyHover(){
     const plotW=w-pL-pR;
     const plotH=h-pT-pB;
 
-    const maxDev=Math.max(0.02,...points.map(p=>Math.abs(p.value-50)).filter(Number.isFinite));
-    const range=Math.max(0.15,maxDev+0.03);
+    // Håll hovermarkörens y-skala identisk med svgSingle().
+    const endMs=points[points.length-1].t;
+    const startMs=endMs-30*60*1000;
+    const visiblePoints=points.filter(p=>p.t>=startMs&&p.t<=endMs);
+    const maxDev=Math.max(
+      0,
+      ...visiblePoints.map(p=>Math.abs(p.value-50)).filter(Number.isFinite)
+    );
+    const range=Math.max(0.04,maxDev+0.01);
     const zMin=50-range;
     const zMax=50+range;
     const y=v=>pT+(zMax-v)/(zMax-zMin)*plotH;
 
-    // Exakt samma tidsbas som svgSingle().
-    const endMs=points[points.length-1].t;
-    const startMs=endMs-30*60*1000;
     const x=t=>pL+(t-startMs)/(30*60*1000)*plotW;
 
     const r=svg.getBoundingClientRect();
