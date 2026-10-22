@@ -2139,7 +2139,7 @@ setInterval(()=>{
   const at=new Date(last.t);
   const dev=f-50;
 
-  const freqText=fmt(f,4);
+  const freqText=fmt(f,3);
   $('freq').textContent=freqText;
   const freqInline=$('freqInline');
   if(freqInline)freqInline.textContent=freqText;
