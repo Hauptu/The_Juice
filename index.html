@@ -1216,13 +1216,17 @@ function svgSingle(values,min,max,ref=null,endTime=null,periodMs=1000){
   // three most useful frequency reference labels there; keep the fuller
   // scale in 2x2.
   const compactFreq=document.getElementById('app')?.classList.contains('layout-1x2');
-  const axisValues=compactFreq
-    ? [49.90,50.00,50.10]
-    : [zMin,49.50,49.90,50.00,50.10,50.50,zMax];
+  // Use tidy, predictable labels rather than exposing awkward dynamic endpoints.
+  // Tight scales use 0.02 Hz steps; wider scales use 0.05 Hz steps.
+  const axisStep=range<=0.16?0.02:0.05;
+  const firstAxisTick=Math.ceil(zMin/axisStep)*axisStep;
+  const axisValues=[];
+  for(let v=firstAxisTick;v<=zMax+1e-9;v+=axisStep){
+    axisValues.push(Number(v.toFixed(2)));
+  }
+  axisValues.push(50);
   const axis=[...new Set(
-    axisValues
-      .filter(v=>v>=zMin&&v<=zMax)
-      .map(v=>Number(v.toFixed(3)))
+    axisValues.filter(v=>v>=zMin-1e-9&&v<=zMax+1e-9)
   )].sort((a,b)=>a-b);
 
   const compactAxisHtml=compactFreq
