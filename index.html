@@ -2023,15 +2023,19 @@ async function mfrr(){
   }finally{window.mfrrBusy=false;}
 }
 
+let freqForceHistoryReload=false;
+
 async function frequency(){
   if(freqBusy)return;
   freqBusy=true;
   attempted.freq=true;
+  const forceHistoryReload=freqForceHistoryReload;
+  freqForceHistoryReload=false;
 
   try{
     const now=Date.now();
     const initialLoad=!Array.isArray(state.freq)||!state.freq.length;
-    const lookbackMs=initialLoad?30*60*1000:15000;
+    const lookbackMs=(initialLoad||forceHistoryReload)?30*60*1000:15000;
     const from=new Date(now-lookbackMs);
     const to=new Date(now);
 
@@ -2071,6 +2075,16 @@ async function frequency(){
     state.freqPeriodMs=ms;
     state.freqEndTime=new Date(latestAt);
 
+    // När fliken åter blir synlig: hoppa direkt till den senaste punkten
+    // som ligger bakom dashboardens normala 8-sekunders visningsfördröjning.
+    // Annars skulle grafen behöva spela ikapp varje sekund efter bakgrundsläge.
+    if(forceHistoryReload){
+      const displayTarget=Date.now()-8000;
+      const latestDisplayPoint=state.freq.reduce((best,p)=>
+        p.t<=displayTarget && (!best||p.t>best.t) ? p : best,null);
+      if(latestDisplayPoint) state.freqDisplayTime=new Date(latestDisplayPoint.t);
+    }
+
     markSync('freq','freqUpdated','Synkad');
     status('freqStatus','LIVE','ok');
 
@@ -2091,6 +2105,18 @@ setInterval(prices,900000);
 setInterval(mfrr,300000);
 setInterval(()=>{mfrrAreaIndex=(mfrrAreaIndex+1)%4;rendermFRRArea()},7000);
 setInterval(frequency,5000);
+
+// Bakgrundsflikar kan få sina timers strypta av webbläsaren.
+// Vid återkomst hämtar vi omedelbart 30 min historik och synkar grafen
+// mot aktuell tid, i stället för att låta den spela ikapp från en gammal punkt.
+function resumeFrequencyIfVisible(){
+  if(document.visibilityState!=='visible')return;
+  freqForceHistoryReload=true;
+  frequency();
+}
+document.addEventListener('visibilitychange',resumeFrequencyIfVisible);
+window.addEventListener('pageshow',resumeFrequencyIfVisible);
+window.addEventListener('focus',resumeFrequencyIfVisible);
 
 setInterval(()=>{
   if(!Array.isArray(state.freq)||!state.freq.length)return;
