@@ -1601,9 +1601,14 @@ function attachPriceHover(){
   const old=chart.querySelector('.price-hover'); if(old)old.remove();
   const tip=document.createElement('div'); tip.className='price-hover'; chart.appendChild(tip);
   const line=document.createElementNS('http://www.w3.org/2000/svg','line');
-  line.setAttribute('class','price-hover-line'); line.setAttribute('y1','10'); line.setAttribute('y2','218'); line.style.display='none';
+  line.setAttribute('class','price-hover-line');
+  line.setAttribute('y1','10');
+  line.setAttribute('y2','218');
+  line.style.display='none';
   svg.appendChild(line);
-  const W=760,H=250,pl=48,pr=12,pt=10,pb=32;
+
+  // Keep the hover coordinate system identical to rollingPriceChart().
+  const W=760,pl=68,pr=12;
   const windowStart=Date.now()-4*60*60*1000;
   const now=Date.now();
   const series=A.map(a=>({name:a,entries:parseEntries(a)}));
@@ -1611,24 +1616,58 @@ function attachPriceHover(){
   if(!all.length)return;
   const end=Math.max(now+15*60*1000,...all.map(e=>new Date(e.end).getTime()));
   const plotW=W-pl-pr;
-  const xToT=x=>windowStart+(x-pl)/plotW*(end-windowStart);
-  const fmtTime=t=>new Date(t).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});
-  const getVal=(entries,t)=>{const e=entries.find(e=>new Date(e.start).getTime()<=t&&new Date(e.end).getTime()>t);return e?.v};
+  const x=t=>pl+(t-windowStart)/(end-windowStart)*plotW;
+  const getEntry=(entries,t)=>entries.find(e=>
+    new Date(e.start).getTime()<=t && new Date(e.end).getTime()>t
+  );
+
   svg.addEventListener('mousemove',ev=>{
     const r=svg.getBoundingClientRect();
-    const x=(ev.clientX-r.left)/r.width*W;
-    if(x<pl||x>W-pr){tip.style.display='none';line.style.display='none';return;}
-    const t=Math.max(windowStart,Math.min(end,xToT(x)));
-    const vals=series.map(s=>({name:s.name,v:getVal(s.entries,t)}));
-    tip.innerHTML='<div class="ph-time">'+new Date(t).toLocaleString('sv-SE',{weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})+'</div>'+vals.map(v=>'<div class="ph-row"><span>'+v.name+'</span><span class="ph-val">'+(v.v==null?'—':fmt(v.v,1)+' '+currencyUnit())+'</span></div>').join('');
-    const cx=x/r.width*chart.clientWidth;
-    const cy=ev.clientY-r.top;
+    const rawX=(ev.clientX-r.left)/r.width*W;
+    if(rawX<pl||rawX>W-pr){
+      tip.style.display='none';
+      line.style.display='none';
+      return;
+    }
+
+    const rawTime=Math.max(windowStart,Math.min(end,windowStart+(rawX-pl)/plotW*(end-windowStart)));
+    // Day-ahead prices are quarter-hourly. Snap the cursor to the start
+    // of the quarter being inspected so the line, values and label agree.
+    const quarterMs=15*60*1000;
+    const quarterStart=Math.floor(rawTime/quarterMs)*quarterMs;
+    const entries=series.map(s=>({
+      name:s.name,
+      entry:getEntry(s.entries,quarterStart)
+    }));
+    const active=entries.find(v=>v.entry)?.entry;
+    const intervalStart=active?new Date(active.start).getTime():quarterStart;
+    const intervalEnd=active?new Date(active.end).getTime():intervalStart+quarterMs;
+    const markerTime=intervalStart;
+    const xx=x(markerTime);
+
+    line.setAttribute('x1',xx);
+    line.setAttribute('x2',xx);
+    line.style.display='block';
+
+    const fmtClock=t=>new Date(t).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});
+    const date=new Date(intervalStart);
+    const dateLabel=date.toLocaleDateString('sv-SE',{weekday:'short',day:'2-digit',month:'short'});
+    tip.innerHTML='<div class="ph-time">'+dateLabel+', '+fmtClock(intervalStart)+'–'+fmtClock(intervalEnd)+'</div>'+
+      entries.map(v=>'<div class="ph-row"><span>'+v.name+'</span><span class="ph-val">'+(v.entry?.v==null?'—':fmt(v.entry.v,1)+' '+currencyUnit())+'</span></div>').join('');
+
+    const chartRect=chart.getBoundingClientRect();
+    const cx=ev.clientX-chartRect.left;
+    const cy=ev.clientY-chartRect.top;
     tip.style.display='block';
-    let left=cx+12; if(left+175>chart.clientWidth)left=cx-187;
-    tip.style.left=Math.max(4,left)+'px'; tip.style.top=Math.max(4,cy-20)+'px';
-    line.setAttribute('x1',x); line.setAttribute('x2',x); line.style.display='block';
+    let left=cx+12;
+    if(left+190>chart.clientWidth)left=cx-202;
+    tip.style.left=Math.max(4,left)+'px';
+    tip.style.top=Math.max(4,cy-20)+'px';
   });
-  svg.addEventListener('mouseleave',()=>{tip.style.display='none';line.style.display='none'});
+  svg.addEventListener('mouseleave',()=>{
+    tip.style.display='none';
+    line.style.display='none';
+  });
 }
 
 function getCurrentPriceEntries(){
