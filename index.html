@@ -258,14 +258,15 @@ h2,
 }
 
 #market .head,
-/* Move the frequency LIVE indicator toward the settings control now that the old toggles are gone. */
-#balance #freqStatus{transform:translateX(120px)}
-@media (max-width:900px){#balance #freqStatus{transform:translateX(55px)}}
 #balance .head,
 #physical .head,
 #system .head{
   border-bottom-color:var(--line-soft);
 }
+
+/* Move only the frequency LIVE indicator toward the settings control. */
+#balance #freqStatus{transform:translateX(120px)}
+@media (max-width:900px){#balance #freqStatus{transform:translateX(55px)}}
 
 .badge{
   color:var(--green);
