@@ -2468,8 +2468,9 @@ function openKpiDetail(kind,area){
     let nowMarker='';
     if(kind==='spot'&&nowMs>minT&&nowMs<maxT){
       const nowX=x(nowMs),futureWidth=Math.max(0,W-R-nowX);
-      futureShade='<rect x="'+nowX+'" y="'+T+'" width="'+futureWidth+'" height="'+plotH+'" fill="#4f9f55" fill-opacity=".09"/>';
-      nowMarker='<line x1="'+nowX+'" y1="'+T+'" x2="'+nowX+'" y2="'+(T+plotH)+'" stroke="#4f9f55" stroke-width="1.5" stroke-dasharray="5 4"/><text x="'+(nowX+5)+'" y="'+(T+12)+'" fill="#4f9f55" font-size="12" font-weight="800">NU</text>';
+      const futureColor=spotColors[area]||'#4f9f55';
+      futureShade='<rect x="'+nowX+'" y="'+T+'" width="'+futureWidth+'" height="'+plotH+'" fill="'+futureColor+'" fill-opacity=".10"/>';
+      nowMarker='<line x1="'+nowX+'" y1="'+T+'" x2="'+nowX+'" y2="'+(T+plotH)+'" stroke="'+futureColor+'" stroke-width="1.5" stroke-opacity=".8" stroke-dasharray="5 4"/>';
     }
     chart.innerHTML=grid+futureShade+xGrid+paths+nowMarker+labels;
   }
