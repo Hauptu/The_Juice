@@ -2281,9 +2281,11 @@ setInterval(()=>{
 
   const f=last.value;
   const at=new Date(last.t);
-  const dev=f-50;
-
-  const freqText=fmt(f,3);
+  // Use the same rounded frequency for both readouts so the displayed
+  // deviation always exactly matches displayed frequency minus 50.000 Hz.
+  const displayedFreq=Math.round(f*1000)/1000;
+  const dev=Math.round((displayedFreq-50)*1000)/1000;
+  const freqText=fmt(displayedFreq,3);
   $('freq').textContent=freqText;
   const freqInline=$('freqInline');
   if(freqInline)freqInline.textContent=freqText;
