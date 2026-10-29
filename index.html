@@ -1102,54 +1102,7 @@ window.__juiceStartupFailsafe=setTimeout(()=>{
 },12000);
 
 
-// KPI detail modal: render only from data already held by the dashboard.
-let kpiDetailClipboard='';
-function openKpiDetail(kind,area){
-  const overlay=$('kpiDetailOverlay'),title=$('kpiDetailTitle'),subtitle=$('kpiDetailSubtitle'),table=$('kpiDetailTable'),chart=$('kpiDetailChart');
-  if(!overlay||!table||!chart)return;
-  let rows=[],columns=[],series=[],label='';
-  if(kind==='spot'){
-    label='Day-ahead · '+area;
-    rows=parseEntries(area).map(x=>({start:x.start,end:x.end,price:x.v}));
-    columns=[['start','Från'],['end','Till'],['price','Pris ('+currencyUnit()+')']];
-    series=rows.map(r=>({t:new Date(r.start).getTime(),v:r.price}));
-  }else{
-    label='mFRR EAM · '+area;
-    const mfrr=mfrrRowsCache.filter(r=>r.a===area).map(r=>({t:r.t instanceof Date?r.t:new Date(r.t),up:r.up,down:r.down}));
-    const imbalance=imbalanceRowsCache.filter(r=>r.a===area);
-    const byTime=new Map();
-    for(const r of mfrr){const k=r.t.getTime();byTime.set(k,{time:r.t,up:r.up,down:r.down,imbalance:null});}
-    for(const r of imbalance){const k=r.t.getTime();const z=byTime.get(k)||{time:r.t,up:null,down:null,imbalance:null};z.imbalance=r.imbalance;byTime.set(k,z);}
-    rows=Array.from(byTime.values()).sort((a,b)=>a.time-b.time);
-    columns=[['time','Tid'],['up','Upp ('+currencyUnit()+')'],['down','Ned ('+currencyUnit()+')'],['imbalance','Obalans ('+currencyUnit()+')']];
-    series=rows.filter(r=>Number.isFinite(r.up)).map(r=>({t:r.time.getTime(),v:r.up}));
-  }
-  title.textContent=label;
-  subtitle.textContent=rows.length+' datapunkter · befintlig data · ingen extra hämtning';
-  const fmtTime=v=>{const d=new Date(v);return Number.isNaN(d.getTime())?'—':d.toLocaleString('sv-SE',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});};
-  const fmtCell=(key,v)=>v==null||!Number.isFinite(Number(v))&&key!=='start'&&key!=='end'&&key!=='time'?'—':(['start','end','time'].includes(key)?fmtTime(v):Number(v).toLocaleString('sv-SE',{maximumFractionDigits:2,minimumFractionDigits:2}));
-  table.querySelector('thead').innerHTML='<tr>'+columns.map(c=>'<th class="'+(c[0]==='start'||c[0]==='end'||c[0]==='time'?'':'num')+'">'+c[1]+'</th>').join('')+'</tr>';
-  table.querySelector('tbody').innerHTML=rows.map(r=>'<tr>'+columns.map(c=>'<td class="'+(['start','end','time'].includes(c[0])?'':'num')+'">'+fmtCell(c[0],r[c[0]])+'</td>').join('')+'</tr>').join('');
-  kpiDetailClipboard=[columns.map(c=>c[1]).join('\t'),...rows.map(r=>columns.map(c=>fmtCell(c[0],r[c[0]])).join('\t'))].join('\n');
-  const vals=series.filter(p=>Number.isFinite(p.v));
-  if(!vals.length){chart.innerHTML='<text x="600" y="160" text-anchor="middle" fill="currentColor" font-size="18">Ingen tidsserie tillgänglig i den data som redan hämtats.</text>';}
-  else{
-    const W=1200,H=320,L=68,R=24,T=18,B=36,minT=Math.min(...vals.map(p=>p.t)),maxT=Math.max(...vals.map(p=>p.t)),minV=Math.min(...vals.map(p=>p.v)),maxV=Math.max(...vals.map(p=>p.v)),range=Math.max(1,maxV-minV),x=t=>L+(t-minT)/Math.max(1,maxT-minT)*(W-L-R),y=v=>T+(maxV-v)/range*(H-T-B);
-    const path=vals.map((p,i)=>(i?'L':'M')+x(p.t).toFixed(1)+' '+y(p.v).toFixed(1)).join(' ');
-    const grid=[0,1,2,3,4].map(i=>{const yy=T+i*(H-T-B)/4,v=maxV-i*range/4;return '<line x1="'+L+'" y1="'+yy+'" x2="'+(W-R)+'" y2="'+yy+'" stroke="currentColor" stroke-opacity=".13"/><text x="'+(L-10)+'" y="'+(yy+4)+'" text-anchor="end" fill="currentColor" opacity=".75" font-size="12">'+v.toLocaleString('sv-SE',{maximumFractionDigits:2})+'</text>';}).join('');
-    chart.innerHTML=grid+'<path d="'+path+'" fill="none" stroke="'+(kind==='spot'?'#4f9f55':'#004b6e')+'" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>'+'<text x="'+L+'" y="'+(H-8)+'" fill="currentColor" font-size="12">'+fmtTime(minT)+'</text><text x="'+(W-R)+'" y="'+(H-8)+'" text-anchor="end" fill="currentColor" font-size="12">'+fmtTime(maxT)+'</text>';
-  }
-  overlay.classList.add('open');overlay.setAttribute('aria-hidden','false');$('kpiDetailClose').focus();
-}
-function closeKpiDetail(){const o=$('kpiDetailOverlay');if(o){o.classList.remove('open');o.setAttribute('aria-hidden','true');}}
-$('areaCards')?.addEventListener('click',e=>{const card=e.target.closest('.card');const area=card?.querySelector('.label')?.textContent?.trim();if(A.includes(area))openKpiDetail('spot',area);});
-$('areaCards')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){const card=e.target.closest('.card');const area=card?.querySelector('.label')?.textContent?.trim();if(A.includes(area)){e.preventDefault();openKpiDetail('spot',area);}}});
-document.querySelectorAll('#system .mfrr-card').forEach((card,i)=>{const area=mfrrAreas[i];if(!area)return;card.setAttribute('role','button');card.setAttribute('tabindex','0');card.setAttribute('aria-label','Visa mFRR-detaljer '+area);card.addEventListener('click',()=>openKpiDetail('mfrr',area));card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openKpiDetail('mfrr',area);}});});
-$('kpiDetailClose')?.addEventListener('click',closeKpiDetail);
-$('kpiDetailOverlay')?.addEventListener('click',e=>{if(e.target===$('kpiDetailOverlay'))closeKpiDetail();});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('kpiDetailOverlay')?.classList.contains('open'))closeKpiDetail();});
-$('kpiDetailCopy')?.addEventListener('click',async()=>{if(!kpiDetailClipboard)return;try{await navigator.clipboard.writeText(kpiDetailClipboard);$('kpiDetailCopy').textContent='Kopierad';setTimeout(()=>{$('kpiDetailCopy').textContent='Kopiera tabell';},1200);}catch(e){const ta=document.createElement('textarea');ta.value=kpiDetailClipboard;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();}});
-\n</script>
+</script>
 <script>
 
 
@@ -2416,6 +2369,54 @@ setInterval(()=>{
 },1000);
 
 
+// KPI detail modal: render only from data already held by the dashboard.
+let kpiDetailClipboard='';
+function openKpiDetail(kind,area){
+  const overlay=$('kpiDetailOverlay'),title=$('kpiDetailTitle'),subtitle=$('kpiDetailSubtitle'),table=$('kpiDetailTable'),chart=$('kpiDetailChart');
+  if(!overlay||!table||!chart)return;
+  let rows=[],columns=[],series=[],label='';
+  if(kind==='spot'){
+    label='Day-ahead · '+area;
+    rows=parseEntries(area).map(x=>({start:x.start,end:x.end,price:x.v}));
+    columns=[['start','Från'],['end','Till'],['price','Pris ('+currencyUnit()+')']];
+    series=rows.map(r=>({t:new Date(r.start).getTime(),v:r.price}));
+  }else{
+    label='mFRR EAM · '+area;
+    const mfrr=mfrrRowsCache.filter(r=>r.a===area).map(r=>({t:r.t instanceof Date?r.t:new Date(r.t),up:r.up,down:r.down}));
+    const imbalance=imbalanceRowsCache.filter(r=>r.a===area);
+    const byTime=new Map();
+    for(const r of mfrr){const k=r.t.getTime();byTime.set(k,{time:r.t,up:r.up,down:r.down,imbalance:null});}
+    for(const r of imbalance){const k=r.t.getTime();const z=byTime.get(k)||{time:r.t,up:null,down:null,imbalance:null};z.imbalance=r.imbalance;byTime.set(k,z);}
+    rows=Array.from(byTime.values()).sort((a,b)=>a.time-b.time);
+    columns=[['time','Tid'],['up','Upp ('+currencyUnit()+')'],['down','Ned ('+currencyUnit()+')'],['imbalance','Obalans ('+currencyUnit()+')']];
+    series=rows.filter(r=>Number.isFinite(r.up)).map(r=>({t:r.time.getTime(),v:r.up}));
+  }
+  title.textContent=label;
+  subtitle.textContent=rows.length+' datapunkter · befintlig data · ingen extra hämtning';
+  const fmtTime=v=>{const d=new Date(v);return Number.isNaN(d.getTime())?'—':d.toLocaleString('sv-SE',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});};
+  const fmtCell=(key,v)=>v==null||!Number.isFinite(Number(v))&&key!=='start'&&key!=='end'&&key!=='time'?'—':(['start','end','time'].includes(key)?fmtTime(v):Number(v).toLocaleString('sv-SE',{maximumFractionDigits:2,minimumFractionDigits:2}));
+  table.querySelector('thead').innerHTML='<tr>'+columns.map(c=>'<th class="'+(c[0]==='start'||c[0]==='end'||c[0]==='time'?'':'num')+'">'+c[1]+'</th>').join('')+'</tr>';
+  table.querySelector('tbody').innerHTML=rows.map(r=>'<tr>'+columns.map(c=>'<td class="'+(['start','end','time'].includes(c[0])?'':'num')+'">'+fmtCell(c[0],r[c[0]])+'</td>').join('')+'</tr>').join('');
+  kpiDetailClipboard=[columns.map(c=>c[1]).join('\t'),...rows.map(r=>columns.map(c=>fmtCell(c[0],r[c[0]])).join('\t'))].join('\n');
+  const vals=series.filter(p=>Number.isFinite(p.v));
+  if(!vals.length){chart.innerHTML='<text x="600" y="160" text-anchor="middle" fill="currentColor" font-size="18">Ingen tidsserie tillgänglig i den data som redan hämtats.</text>';}
+  else{
+    const W=1200,H=320,L=68,R=24,T=18,B=36,minT=Math.min(...vals.map(p=>p.t)),maxT=Math.max(...vals.map(p=>p.t)),minV=Math.min(...vals.map(p=>p.v)),maxV=Math.max(...vals.map(p=>p.v)),range=Math.max(1,maxV-minV),x=t=>L+(t-minT)/Math.max(1,maxT-minT)*(W-L-R),y=v=>T+(maxV-v)/range*(H-T-B);
+    const path=vals.map((p,i)=>(i?'L':'M')+x(p.t).toFixed(1)+' '+y(p.v).toFixed(1)).join(' ');
+    const grid=[0,1,2,3,4].map(i=>{const yy=T+i*(H-T-B)/4,v=maxV-i*range/4;return '<line x1="'+L+'" y1="'+yy+'" x2="'+(W-R)+'" y2="'+yy+'" stroke="currentColor" stroke-opacity=".13"/><text x="'+(L-10)+'" y="'+(yy+4)+'" text-anchor="end" fill="currentColor" opacity=".75" font-size="12">'+v.toLocaleString('sv-SE',{maximumFractionDigits:2})+'</text>';}).join('');
+    chart.innerHTML=grid+'<path d="'+path+'" fill="none" stroke="'+(kind==='spot'?'#4f9f55':'#004b6e')+'" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>'+'<text x="'+L+'" y="'+(H-8)+'" fill="currentColor" font-size="12">'+fmtTime(minT)+'</text><text x="'+(W-R)+'" y="'+(H-8)+'" text-anchor="end" fill="currentColor" font-size="12">'+fmtTime(maxT)+'</text>';
+  }
+  overlay.classList.add('open');overlay.setAttribute('aria-hidden','false');$('kpiDetailClose').focus();
+}
+function closeKpiDetail(){const o=$('kpiDetailOverlay');if(o){o.classList.remove('open');o.setAttribute('aria-hidden','true');}}
+$('areaCards')?.addEventListener('click',e=>{const card=e.target.closest('.card');const area=card?.querySelector('.label')?.textContent?.trim();if(A.includes(area))openKpiDetail('spot',area);});
+$('areaCards')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){const card=e.target.closest('.card');const area=card?.querySelector('.label')?.textContent?.trim();if(A.includes(area)){e.preventDefault();openKpiDetail('spot',area);}}});
+document.querySelectorAll('#system .mfrr-card').forEach((card,i)=>{const area=mfrrAreas[i];if(!area)return;card.setAttribute('role','button');card.setAttribute('tabindex','0');card.setAttribute('aria-label','Visa mFRR-detaljer '+area);card.addEventListener('click',()=>openKpiDetail('mfrr',area));card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openKpiDetail('mfrr',area);}});});
+$('kpiDetailClose')?.addEventListener('click',closeKpiDetail);
+$('kpiDetailOverlay')?.addEventListener('click',e=>{if(e.target===$('kpiDetailOverlay'))closeKpiDetail();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('kpiDetailOverlay')?.classList.contains('open'))closeKpiDetail();});
+$('kpiDetailCopy')?.addEventListener('click',async()=>{if(!kpiDetailClipboard)return;try{await navigator.clipboard.writeText(kpiDetailClipboard);$('kpiDetailCopy').textContent='Kopierad';setTimeout(()=>{$('kpiDetailCopy').textContent='Kopiera tabell';},1200);}catch(e){const ta=document.createElement('textarea');ta.value=kpiDetailClipboard;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();}});
+\n
 </script>
 </body>
 </html>
