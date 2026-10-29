@@ -2282,12 +2282,12 @@ async function frequency(){
 function swedishDateTimeShort(d=new Date()){const days=['Sön.','Mån.','Tis.','Ons.','Tor.','Fre.','Lör.'];const months=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];const dd=String(d.getDate()).padStart(2,'0');return `${days[d.getDay()]} ${dd} ${months[d.getMonth()]}`}
 function clock(){const d=new Date();$('clockDate').textContent=swedishDateTimeShort(d);const parts=d.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit',second:'2-digit'}).split(':');$('clockMain').innerHTML=`${parts[0]}<span class="clock-colon"><button class="clock-colon-trigger" type="button" aria-label="Visa pengaregn" title="Psst…"></button><span class="clock-colon-dot"></span></span>${parts[1]}<span class="clock-colon"><span class="clock-colon-dot"></span><span class="clock-colon-dot"></span></span>${parts[2]}`}
 function euroBillSvg(denom,color,accent){
-  const billColors={5:{base:'#b8b9b7',deep:'#777c80'},10:{base:'#e4a1a0',deep:'#a83c50'},20:{base:'#9bbde2',deep:'#3d679d'},50:{base:'#edb47e',deep:'#b35d35'},100:{base:'#9bc5a1',deep:'#3e8065'},200:{base:'#e8d28a',deep:'#a67d31'}};
-  const p=billColors[Number(denom)]||{base:color,deep:accent};
+  const billColors={10:{base:'#e9a09b',deep:'#a93642'},20:{base:'#a8c8e8',deep:'#356b9f'},50:{base:'#f0bd86',deep:'#bd672f'}};
+  const p=billColors[Number(denom)]||{base:'#a8c8e8',deep:'#356b9f'};
   const id='bill'+denom;
   return `<svg viewBox="0 0 200 96" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
   <defs>
-    <linearGradient id="${id}bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${p.base}"/><stop offset=".52" stop-color="${color}"/><stop offset="1" stop-color="${p.deep}"/></linearGradient>
+    <linearGradient id="${id}bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${p.base}"/><stop offset=".52" stop-color="${p.base}"/><stop offset="1" stop-color="${p.deep}"/></linearGradient>
     <linearGradient id="${id}foil" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f8f0c5" stop-opacity=".8"/><stop offset=".35" stop-color="#b4d9d5" stop-opacity=".58"/><stop offset=".7" stop-color="#e8b5d0" stop-opacity=".7"/><stop offset="1" stop-color="#f5e4a1" stop-opacity=".75"/></linearGradient>
     <pattern id="${id}lines" width="7" height="7" patternUnits="userSpaceOnUse"><path d="M0 7L7 0M-2 2L2-2M5 9L9 5" stroke="#fff" stroke-opacity=".17" stroke-width=".65"/></pattern>
   </defs>
@@ -2315,7 +2315,7 @@ function euroBillSvg(denom,color,accent){
 function startMoneyRain(){
   if(document.querySelector('.money-rain'))return;
   const layer=document.createElement('div');layer.className='money-rain';layer.setAttribute('aria-hidden','true');document.body.appendChild(layer);
-  const bills=[['5','#6b9eaa','#426d8b'],['10','#78b86d','#337c63'],['20','#e5a84d','#b86c37'],['50','#bd8bca','#7555a1'],['100','#a3ba74','#4d8b74'],['200','#d9a76c','#8d6a43']];
+  const bills=[['10','#e9a09b','#a93642'],['20','#a8c8e8','#356b9f'],['50','#f0bd86','#bd672f']];
   for(let i=0;i<76;i++){
     const [denom,color,accent]=bills[Math.floor(Math.random()*bills.length)];
     const item=document.createElement('span');item.className='money-rain-item';item.innerHTML=euroBillSvg(denom,color,accent);
