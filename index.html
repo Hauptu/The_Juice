@@ -1403,7 +1403,7 @@ async function getJson(url,timeoutMs=8000){const sep=url.includes('?')?'&':'?';c
 function parseEntries(area){
   const d=state.prices[area];
   const rows=Array.isArray(d?.prices)?d.prices:[];
-  return rows.map(x=>({start:x.time_start,end:x.time_end,v:Number(x.SEK_per_kWh)*1000}))
+  return rows.map(x=>({start:x.time_start,end:x.time_end,v:Number(x.EUR_per_MWh)}))
     .filter(x=>Number.isFinite(x.v)&&x.start&&x.end)
     .sort((a,b)=>new Date(a.start)-new Date(b.start));
 }
@@ -1475,7 +1475,7 @@ function rollingPriceChart(){
     labels+=`<text x="${xx}" y="${h-16}" text-anchor="middle" class="axis">${tm}</text>`;
     if(dateChanged)labels+=`<text x="${xx}" y="${h-4}" text-anchor="middle" class="axis" font-weight="700">${d.toLocaleDateString('sv-SE',{day:'2-digit',month:'short'})}</text>`;
   }
-  const svg=`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><text x="12" y="114" class="axis" font-size="8" fill="#69756f" text-anchor="middle" transform="rotate(-90 12 114)">SEK/MWh</text>${grid}${vgrid}${paths}${nowLine}${labels}</svg>`;
+  const svg=`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><text x="12" y="114" class="axis" font-size="8" fill="#69756f" text-anchor="middle" transform="rotate(-90 12 114)">EUR/MWh</text>${grid}${vgrid}${paths}${nowLine}${labels}</svg>`;
   const title=$('priceWindowTitle');
   if(title){
     const legend=title.querySelector('.price-inline-legend');
@@ -1510,7 +1510,7 @@ function attachPriceHover(){
     if(x<pl||x>W-pr){tip.style.display='none';line.style.display='none';return;}
     const t=Math.max(windowStart,Math.min(end,xToT(x)));
     const vals=series.map(s=>({name:s.name,v:getVal(s.entries,t)}));
-    tip.innerHTML='<div class="ph-time">'+new Date(t).toLocaleString('sv-SE',{weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})+'</div>'+vals.map(v=>'<div class="ph-row"><span>'+v.name+'</span><span class="ph-val">'+(v.v==null?'—':fmt(v.v,1)+' SEK/MWh')+'</span></div>').join('');
+    tip.innerHTML='<div class="ph-time">'+new Date(t).toLocaleString('sv-SE',{weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})+'</div>'+vals.map(v=>'<div class="ph-row"><span>'+v.name+'</span><span class="ph-val">'+(v.v==null?'—':fmt(v.v,1)+' EUR/MWh')+'</span></div>').join('');
     const cx=x/r.width*chart.clientWidth;
     const cy=ev.clientY-r.top;
     tip.style.display='block';
@@ -1554,7 +1554,7 @@ function updateCurrentPriceCards(){
 
 function renderPrices(){
   const cur=getCurrentPriceEntries();
-  $('areaCards').innerHTML=cur.map(o=>`<div class="card"><div class="label">${o.a}</div><div class="price ${o.x?.v<0?'down':'up'}">${o.x?fmt(o.x.v):'—'}<span class="unit">SEK/MWh</span></div><div class="time">${o.x?time(o.x.start)+'–'+time(o.x.end):'—'}</div></div>`).join('');
+  $('areaCards').innerHTML=cur.map(o=>`<div class="card"><div class="label">${o.a}</div><div class="price ${o.x?.v<0?'down':'up'}">${o.x?fmt(o.x.v):'—'}<span class="unit">EUR/MWh</span></div><div class="time">${o.x?time(o.x.start)+'–'+time(o.x.end):'—'}</div></div>`).join('');
   const priceWindowTitle=$('priceWindowTitle');
   if(priceWindowTitle){
     const hours=fmt0(Math.max(0,Math.round((Math.max(...cur.map(o=>o.e.at(-1)?.end?new Date(o.e.at(-1).end).getTime():0))-Date.now())/3600000)));
@@ -1580,7 +1580,7 @@ function schedulePriceQuarterUpdate(){
 async function prices(){
   attempted.market=true;
   try{
-    const d=await getJson('/api/elpriset',15000);
+    const d=await getJson('/api/entsoe/spot',15000);
     if(!d?.data)throw Error('API-svar saknas (kontrollera att PowerShell-servern körs)');
     state.prices=d.data;
     const cur=renderPrices();
@@ -1601,7 +1601,7 @@ async function prices(){
         if(state.prices && Object.keys(state.prices).length){
       renderPrices();
     }
-    refreshStatus('market','marketStatus','Elprisetjustnu');
+    refreshStatus('market','marketStatus','ENTSO-E spot');
     $('marketStatus').title=String(e?.message||e) + (Object.keys(state.prices||{}).length ? '\nVisar senast fungerande prisdata. Ny hämtning misslyckades.' : '');
     console.warn('[Ruta1] prisuppdatering misslyckades:',e);
   }
