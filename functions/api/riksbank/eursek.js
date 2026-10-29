@@ -17,7 +17,7 @@ export async function onRequestGet({ request }) {
   if (cached) return cached;
 
   try {
-    const upstream = await fetch("https://api.riksbank.se/swea/v1/Observations/Latest/sekeurpmi, {
+    const upstream = await fetch("https://api.riksbank.se/swea/v1/Observations/Latest/sekeurpmi", {
       headers: { "accept": "application/json" },
     });
     if (!upstream.ok) throw new Error("Riksbanken HTTP " + upstream.status);
