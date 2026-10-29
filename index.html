@@ -984,7 +984,7 @@ body.dark-mode #app.layout-1x2 #balance .freq-trace{stroke:#b9c7c1}
 .kpi-detail-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 22px;border-bottom:1px solid var(--line);flex-shrink:0}
 .kpi-detail-title{font-size:clamp(18px,2vw,28px);font-weight:800;margin:0}.kpi-detail-subtitle{font-size:12px;color:var(--text-dim);margin-top:4px}
 .kpi-detail-actions{display:flex;gap:8px;align-items:center}.kpi-detail-btn{font:inherit;font-size:12px;font-weight:700;padding:8px 12px;border:1px solid var(--line);border-radius:7px;background:var(--panel-b);color:var(--text);cursor:pointer}.kpi-detail-close{font-size:22px;line-height:1;padding:6px 11px}
-.kpi-detail-chart-wrap{height:48%;min-height:220px;padding:12px 18px;border-bottom:1px solid var(--line);flex-shrink:0}.kpi-detail-chart{width:100%;height:100%;display:block}.kpi-detail-table-wrap{flex:1;min-height:0;overflow:auto;padding:0 18px 14px}.kpi-detail-table{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}.kpi-detail-table th{position:sticky;top:0;background:var(--panel-b);z-index:1;text-align:left;font-weight:800}.kpi-detail-table th,.kpi-detail-table td{padding:8px 10px;border-bottom:1px solid var(--line-soft);white-space:nowrap}.kpi-detail-table td.num,.kpi-detail-table th.num{text-align:right}.kpi-detail-table tr:hover td{background:var(--card-b)}.kpi-detail-table tr.future-row td{background:rgba(79,159,85,.075)}.kpi-detail-table tr.future-row td:first-child{border-left:3px solid #4f9f55;padding-left:7px}.kpi-detail-table tr.future-row:hover td{background:rgba(79,159,85,.13)}
+.kpi-detail-chart-wrap{height:48%;min-height:220px;padding:12px 18px;border-bottom:1px solid var(--line);flex-shrink:0}.kpi-detail-chart{width:100%;height:100%;display:block}.kpi-detail-table-wrap{flex:1;min-height:0;overflow:auto;padding:0 18px 14px}.kpi-detail-table{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}.kpi-detail-table th{position:sticky;top:0;background:var(--panel-b);z-index:1;text-align:left;font-weight:800}.kpi-detail-table th,.kpi-detail-table td{padding:8px 10px;border-bottom:1px solid var(--line-soft);white-space:nowrap}.kpi-detail-table td.num,.kpi-detail-table th.num{text-align:right}.kpi-detail-table tr:hover td{background:var(--card-b)}.kpi-detail-table tr.future-row td{background:var(--future-area-tint,rgba(79,159,85,.075))}.kpi-detail-table tr.future-row td:first-child{border-left:3px solid var(--future-area-color,#4f9f55);padding-left:7px}.kpi-detail-table tr.future-row:hover td{background:var(--future-area-hover,rgba(79,159,85,.13))}
 #areaCards .card,#system .mfrr-card{cursor:pointer}#areaCards .card:focus-visible,#system .mfrr-card:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 @media(max-width:700px){.kpi-detail-overlay{padding:0}.kpi-detail-dialog{width:100vw;height:100dvh;border-radius:0}.kpi-detail-head{padding:12px}.kpi-detail-chart-wrap{height:40%;min-height:180px;padding:8px}.kpi-detail-table-wrap{padding:0 8px 8px}}
 </style>
@@ -2372,6 +2372,10 @@ setInterval(()=>{
 
 // KPI detail modal: render only from data already held by the dashboard.
 let kpiDetailClipboard='';
+function spotColorsForKpiArea(area){
+  const dark=document.body.classList.contains('dark-mode');
+  return (dark?{SE1:'#e21d2b',SE2:'#5bb7e3',SE3:'#63b56d',SE4:'#e9bd45'}:{SE1:'#e21d2b',SE2:'#004b6e',SE3:'#4f9f55',SE4:'#e5ac00'})[area]||'#4f9f55';
+}
 function openKpiDetail(kind,area){
   const overlay=$('kpiDetailOverlay'),title=$('kpiDetailTitle'),subtitle=$('kpiDetailSubtitle'),table=$('kpiDetailTable'),chart=$('kpiDetailChart');
   if(!overlay||!table||!chart)return;
@@ -2406,6 +2410,12 @@ function openKpiDetail(kind,area){
   const fmtCell=(key,v)=>v==null||!Number.isFinite(Number(v))&&key!=='start'&&key!=='end'&&key!=='time'?'—':(['start','end','time'].includes(key)?fmtTime(v):Number(v).toLocaleString('sv-SE',{maximumFractionDigits:2,minimumFractionDigits:2}));
   table.querySelector('thead').innerHTML='<tr>'+columns.map(c=>'<th class="'+(['start','end','time'].includes(c[0])?'':'num')+'">'+c[1]+'</th>').join('')+'</tr>';
   const nowMs=Date.now();
+  if(kind==='spot'){
+    const futureAreaColor=spotColorsForKpiArea(area);
+    table.style.setProperty('--future-area-color',futureAreaColor);
+    table.style.setProperty('--future-area-tint',futureAreaColor+'1A');
+    table.style.setProperty('--future-area-hover',futureAreaColor+'2B');
+  }
   table.querySelector('tbody').innerHTML=rows.map(r=>{
     const future=kind==='spot'&&new Date(r.start).getTime()>=nowMs;
     return '<tr'+(future?' class="future-row" title="Framtida pris"':'')+'>'+columns.map(c=>'<td class="'+(['start','end','time'].includes(c[0])?'':'num')+'">'+fmtCell(c[0],r[c[0]])+'</td>').join('')+'</tr>';
