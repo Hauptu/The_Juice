@@ -2380,7 +2380,7 @@ function openKpiDetail(kind,area){
     label='Day-ahead · '+area;
     rows=parseEntries(area).map(x=>({start:x.start,end:x.end,price:x.v}));
     columns=[['start','Från'],['end','Till'],['price','Pris ('+currencyUnit()+')']];
-    series=rows.map(r=>({t:new Date(r.start).getTime(),v:r.price}));
+    series=rows.map(r=>({start:new Date(r.start).getTime(),end:new Date(r.end).getTime(),v:r.price})).filter(p=>Number.isFinite(p.start)&&Number.isFinite(p.end)&&Number.isFinite(p.v));
   }else{
     label='mFRR EAM · '+area;
     const mfrr=mfrrRowsCache.filter(r=>r.a===area).map(r=>({t:r.t instanceof Date?r.t:new Date(r.t),up:r.up,down:r.down}));
@@ -2390,22 +2390,52 @@ function openKpiDetail(kind,area){
     for(const r of imbalance){const k=r.t.getTime();const z=byTime.get(k)||{time:r.t,up:null,down:null,imbalance:null};z.imbalance=r.imbalance;byTime.set(k,z);}
     rows=Array.from(byTime.values()).sort((a,b)=>a.time-b.time);
     columns=[['time','Tid'],['up','Upp ('+currencyUnit()+')'],['down','Ned ('+currencyUnit()+')'],['imbalance','Obalans ('+currencyUnit()+')']];
-    series=rows.filter(r=>Number.isFinite(r.up)).map(r=>({t:r.time.getTime(),v:r.up}));
+    series=rows.filter(r=>Number.isFinite(r.up)).map(r=>({start:r.time.getTime(),end:r.time.getTime(),v:r.up}));
   }
   title.textContent=label;
   subtitle.textContent=rows.length+' datapunkter · befintlig data · ingen extra hämtning';
   const fmtTime=v=>{const d=new Date(v);return Number.isNaN(d.getTime())?'—':d.toLocaleString('sv-SE',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});};
   const fmtCell=(key,v)=>v==null||!Number.isFinite(Number(v))&&key!=='start'&&key!=='end'&&key!=='time'?'—':(['start','end','time'].includes(key)?fmtTime(v):Number(v).toLocaleString('sv-SE',{maximumFractionDigits:2,minimumFractionDigits:2}));
-  table.querySelector('thead').innerHTML='<tr>'+columns.map(c=>'<th class="'+(c[0]==='start'||c[0]==='end'||c[0]==='time'?'':'num')+'">'+c[1]+'</th>').join('')+'</tr>';
+  table.querySelector('thead').innerHTML='<tr>'+columns.map(c=>'<th class="'+(['start','end','time'].includes(c[0])?'':'num')+'">'+c[1]+'</th>').join('')+'</tr>';
   table.querySelector('tbody').innerHTML=rows.map(r=>'<tr>'+columns.map(c=>'<td class="'+(['start','end','time'].includes(c[0])?'':'num')+'">'+fmtCell(c[0],r[c[0]])+'</td>').join('')+'</tr>').join('');
   kpiDetailClipboard=[columns.map(c=>c[1]).join('\t'),...rows.map(r=>columns.map(c=>fmtCell(c[0],r[c[0]])).join('\t'))].join('\n');
-  const vals=series.filter(p=>Number.isFinite(p.v));
+  const vals=series.filter(p=>Number.isFinite(p.v)&&Number.isFinite(p.start));
   if(!vals.length){chart.innerHTML='<text x="600" y="160" text-anchor="middle" fill="currentColor" font-size="18">Ingen tidsserie tillgänglig i den data som redan hämtats.</text>';}
   else{
-    const W=1200,H=320,L=68,R=24,T=18,B=36,minT=Math.min(...vals.map(p=>p.t)),maxT=Math.max(...vals.map(p=>p.t)),minV=Math.min(...vals.map(p=>p.v)),maxV=Math.max(...vals.map(p=>p.v)),range=Math.max(1,maxV-minV),x=t=>L+(t-minT)/Math.max(1,maxT-minT)*(W-L-R),y=v=>T+(maxV-v)/range*(H-T-B);
-    const path=vals.map((p,i)=>(i?'L':'M')+x(p.t).toFixed(1)+' '+y(p.v).toFixed(1)).join(' ');
-    const grid=[0,1,2,3,4].map(i=>{const yy=T+i*(H-T-B)/4,v=maxV-i*range/4;return '<line x1="'+L+'" y1="'+yy+'" x2="'+(W-R)+'" y2="'+yy+'" stroke="currentColor" stroke-opacity=".13"/><text x="'+(L-10)+'" y="'+(yy+4)+'" text-anchor="end" fill="currentColor" opacity=".75" font-size="12">'+v.toLocaleString('sv-SE',{maximumFractionDigits:2})+'</text>';}).join('');
-    chart.innerHTML=grid+'<path d="'+path+'" fill="none" stroke="'+(kind==='spot'?'#4f9f55':'#004b6e')+'" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>'+'<text x="'+L+'" y="'+(H-8)+'" fill="currentColor" font-size="12">'+fmtTime(minT)+'</text><text x="'+(W-R)+'" y="'+(H-8)+'" text-anchor="end" fill="currentColor" font-size="12">'+fmtTime(maxT)+'</text>';
+    const W=1200,H=320,L=76,R=24,T=18,B=54;
+    const minT=Math.min(...vals.map(p=>p.start)),maxT=Math.max(...vals.map(p=>Number.isFinite(p.end)&&p.end>p.start?p.end:p.start));
+    const rawMin=Math.min(...vals.map(p=>p.v)),rawMax=Math.max(...vals.map(p=>p.v)),rawRange=Math.max(1,rawMax-rawMin);
+    const pad=Math.max(rawRange*.08,Math.abs(rawMin)*.03,Math.abs(rawMax)*.03,1);
+    const scaleMin=rawMin>=0?0:rawMin-pad,scaleMax=rawMax+pad;
+    const niceStep=range=>{const rough=range/5,pow=10**Math.floor(Math.log10(Math.max(rough,1e-9))),n=rough/pow,m=n<=1?1:n<=2?2:n<=5?5:10;return m*pow;};
+    const yStep=niceStep(scaleMax-scaleMin),yMin=Math.floor(scaleMin/yStep)*yStep,yMax=Math.ceil(scaleMax/yStep)*yStep;
+    const plotW=W-L-R,plotH=H-T-B,x=t=>L+(t-minT)/Math.max(1,maxT-minT)*plotW,y=v=>T+(yMax-v)/(yMax-yMin)*plotH;
+    const fmtAxis=v=>Number(v.toFixed(6)).toLocaleString('sv-SE',{maximumFractionDigits:2});
+    let grid='';
+    for(let v=yMin;v<=yMax+yStep*.001;v+=yStep){const yy=y(v);grid+='<line x1="'+L+'" y1="'+yy+'" x2="'+(W-R)+'" y2="'+yy+'" stroke="currentColor" stroke-opacity="'+(Math.abs(v)<1e-8?'.24':'.13')+'"/><text x="'+(L-12)+'" y="'+(yy+4)+'" text-anchor="end" fill="currentColor" opacity=".78" font-size="12">'+fmtAxis(v)+'</text>';}
+    let path='';
+    if(kind==='spot'){
+      vals.sort((a,b)=>a.start-b.start);
+      vals.forEach((p,i)=>{const a=x(p.start),b=x(Number.isFinite(p.end)&&p.end>p.start?p.end:p.start+15*60*1000),yy=y(p.v);if(i===0)path+='M '+a.toFixed(2)+' '+yy.toFixed(2);else path+=' L '+a.toFixed(2)+' '+y(vals[i-1].v).toFixed(2)+' L '+a.toFixed(2)+' '+yy.toFixed(2);path+=' L '+b.toFixed(2)+' '+yy.toFixed(2);});
+    }else{
+      const pts=vals.slice().sort((a,b)=>a.start-b.start);
+      path=pts.map((p,i)=>(i?'L':'M')+x(p.start).toFixed(2)+' '+y(p.v).toFixed(2)).join(' ');
+    }
+    const totalHours=(maxT-minT)/3600000;
+    const tickHours=totalHours<=10?1:totalHours<=22?2:totalHours<=48?4:totalHours<=100?6:12;
+    const tickMs=tickHours*3600000,firstTick=Math.ceil(minT/tickMs)*tickMs;
+    let xGrid='',labels='';
+    for(let t=firstTick;t<=maxT;t+=tickMs){
+      const xx=x(t);if(xx<L||xx>W-R)continue;
+      xGrid+='<line x1="'+xx+'" y1="'+T+'" x2="'+xx+'" y2="'+(T+plotH)+'" stroke="currentColor" stroke-opacity=".07"/>';
+      const d=new Date(t),timeLabel=d.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});
+      labels+='<text x="'+xx+'" y="'+(H-27)+'" text-anchor="middle" fill="currentColor" opacity=".78" font-size="12">'+timeLabel+'</text>';
+      const prev=new Date(t-tickMs),dateChanged=d.getDate()!==prev.getDate()||d.getMonth()!==prev.getMonth()||d.getFullYear()!==prev.getFullYear();
+      if(dateChanged||t===firstTick){
+        labels+='<text x="'+xx+'" y="'+(H-9)+'" text-anchor="middle" fill="currentColor" font-size="11" font-weight="700">'+d.toLocaleDateString('sv-SE',{day:'numeric',month:'short'})+'</text>';
+      }
+    }
+    chart.innerHTML=grid+xGrid+'<path d="'+path+'" fill="none" stroke="'+(kind==='spot'?'#4f9f55':'#004b6e')+'" stroke-width="2.5" stroke-linejoin="miter" stroke-linecap="butt" vector-effect="non-scaling-stroke"/>'+labels;
   }
   overlay.classList.add('open');overlay.setAttribute('aria-hidden','false');$('kpiDetailClose').focus();
 }
