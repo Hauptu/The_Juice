@@ -2390,7 +2390,8 @@ function openKpiDetail(kind,area){
     for(const r of imbalance){const k=r.t.getTime();const z=byTime.get(k)||{time:r.t,up:null,down:null,imbalance:null};z.imbalance=r.imbalance;byTime.set(k,z);}
     rows=Array.from(byTime.values()).sort((a,b)=>a.time-b.time);
     columns=[['time','Tid'],['up','Upp ('+currencyUnit()+')'],['down','Ned ('+currencyUnit()+')'],['imbalance','Obalans ('+currencyUnit()+')']];
-    series=rows.filter(r=>Number.isFinite(r.up)).map(r=>({start:r.time.getTime(),end:r.time.getTime(),v:r.up}));
+    const factor=displayCurrency==='SEK'&&eurSekRate?eurSekRate:1;
+    series=rows.map(r=>({start:r.time.getTime(),end:r.time.getTime()+900000,up:Number.isFinite(r.up)?r.up*factor:null,down:Number.isFinite(r.down)?r.down*factor:null,imbalance:(()=>{const ib=imbalanceAt(area,r.time.getTime());return ib&&Number.isFinite(ib.imbalance)?ib.imbalance*factor:null;})()}));
   }
   title.textContent=label;
   subtitle.textContent='';
@@ -2399,28 +2400,21 @@ function openKpiDetail(kind,area){
   table.querySelector('thead').innerHTML='<tr>'+columns.map(c=>'<th class="'+(['start','end','time'].includes(c[0])?'':'num')+'">'+c[1]+'</th>').join('')+'</tr>';
   table.querySelector('tbody').innerHTML=rows.map(r=>'<tr>'+columns.map(c=>'<td class="'+(['start','end','time'].includes(c[0])?'':'num')+'">'+fmtCell(c[0],r[c[0]])+'</td>').join('')+'</tr>').join('');
   kpiDetailClipboard=[columns.map(c=>c[1]).join('\t'),...rows.map(r=>columns.map(c=>fmtCell(c[0],r[c[0]])).join('\t'))].join('\n');
-  const vals=series.filter(p=>Number.isFinite(p.v)&&Number.isFinite(p.start));
+  const allValues=kind==='spot'?series.map(p=>p.v).filter(Number.isFinite):series.flatMap(p=>[p.up,p.down,p.imbalance]).filter(Number.isFinite);
+  const vals=kind==='spot'?series.filter(p=>Number.isFinite(p.v)&&Number.isFinite(p.start)):series.filter(p=>Number.isFinite(p.start)&&(Number.isFinite(p.up)||Number.isFinite(p.down)||Number.isFinite(p.imbalance)));
   if(!vals.length){chart.innerHTML='<text x="600" y="160" text-anchor="middle" fill="currentColor" font-size="18">Ingen tidsserie tillgänglig i den data som redan hämtats.</text>';}
   else{
-    const W=1200,H=320,L=76,R=24,T=18,B=54;
+    const W=1200,H=320,L=76,R=24,T=18,B=kind==='mfrr'?76:54;
     const minT=Math.min(...vals.map(p=>p.start)),maxT=Math.max(...vals.map(p=>Number.isFinite(p.end)&&p.end>p.start?p.end:p.start));
-    const rawMin=Math.min(...vals.map(p=>p.v)),rawMax=Math.max(...vals.map(p=>p.v)),rawRange=Math.max(1,rawMax-rawMin);
-    const pad=Math.max(rawRange*.08,Math.abs(rawMin)*.03,Math.abs(rawMax)*.03,1);
-    const scaleMin=rawMin>=0?0:rawMin-pad,scaleMax=rawMax+pad;
+    const rawMin=Math.min(...allValues),rawMax=Math.max(...allValues),rawRange=Math.max(1,rawMax-rawMin);
+    const pad=kind==='mfrr'?Math.max(rawRange*.08,5):Math.max(rawRange*.08,Math.abs(rawMin)*.03,Math.abs(rawMax)*.03,1);
+    const scaleMin=kind==='mfrr'?rawMin-pad:(rawMin>=0?0:rawMin-pad),scaleMax=rawMax+pad;
     const niceStep=range=>{const rough=range/5,pow=10**Math.floor(Math.log10(Math.max(rough,1e-9))),n=rough/pow,m=n<=1?1:n<=2?2:n<=5?5:10;return m*pow;};
     const yStep=niceStep(scaleMax-scaleMin),yMin=Math.floor(scaleMin/yStep)*yStep,yMax=Math.ceil(scaleMax/yStep)*yStep;
     const plotW=W-L-R,plotH=H-T-B,x=t=>L+(t-minT)/Math.max(1,maxT-minT)*plotW,y=v=>T+(yMax-v)/(yMax-yMin)*plotH;
     const fmtAxis=v=>Number(v.toFixed(6)).toLocaleString('sv-SE',{maximumFractionDigits:2});
     let grid='';
     for(let v=yMin;v<=yMax+yStep*.001;v+=yStep){const yy=y(v);grid+='<line x1="'+L+'" y1="'+yy+'" x2="'+(W-R)+'" y2="'+yy+'" stroke="currentColor" stroke-opacity="'+(Math.abs(v)<1e-8?'.24':'.13')+'"/><text x="'+(L-12)+'" y="'+(yy+4)+'" text-anchor="end" fill="currentColor" opacity=".78" font-size="12">'+fmtAxis(v)+'</text>';}
-    let path='';
-    if(kind==='spot'){
-      vals.sort((a,b)=>a.start-b.start);
-      vals.forEach((p,i)=>{const a=x(p.start),b=x(Number.isFinite(p.end)&&p.end>p.start?p.end:p.start+15*60*1000),yy=y(p.v);if(i===0)path+='M '+a.toFixed(2)+' '+yy.toFixed(2);else path+=' L '+a.toFixed(2)+' '+y(vals[i-1].v).toFixed(2)+' L '+a.toFixed(2)+' '+yy.toFixed(2);path+=' L '+b.toFixed(2)+' '+yy.toFixed(2);});
-    }else{
-      const pts=vals.slice().sort((a,b)=>a.start-b.start);
-      path=pts.map((p,i)=>(i?'L':'M')+x(p.start).toFixed(2)+' '+y(p.v).toFixed(2)).join(' ');
-    }
     const totalHours=(maxT-minT)/3600000;
     const tickHours=totalHours<=10?1:totalHours<=22?2:totalHours<=48?4:totalHours<=100?6:12;
     const tickMs=tickHours*3600000,firstTick=Math.ceil(minT/tickMs)*tickMs;
@@ -2429,17 +2423,36 @@ function openKpiDetail(kind,area){
       const xx=x(t);if(xx<L||xx>W-R)continue;
       xGrid+='<line x1="'+xx+'" y1="'+T+'" x2="'+xx+'" y2="'+(T+plotH)+'" stroke="currentColor" stroke-opacity=".07"/>';
       const d=new Date(t),timeLabel=d.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});
-      labels+='<text x="'+xx+'" y="'+(H-27)+'" text-anchor="middle" fill="currentColor" opacity=".78" font-size="12">'+timeLabel+'</text>';
+      labels+='<text x="'+xx+'" y="'+(H-47)+'" text-anchor="middle" fill="currentColor" opacity=".78" font-size="12">'+timeLabel+'</text>';
       const prev=new Date(t-tickMs),dateChanged=d.getDate()!==prev.getDate()||d.getMonth()!==prev.getMonth()||d.getFullYear()!==prev.getFullYear();
-      if(dateChanged||t===firstTick){
-        labels+='<text x="'+xx+'" y="'+(H-9)+'" text-anchor="middle" fill="currentColor" font-size="11" font-weight="700">'+d.toLocaleDateString('sv-SE',{day:'numeric',month:'short'})+'</text>';
-      }
+      if(dateChanged||t===firstTick)labels+='<text x="'+xx+'" y="'+(H-29)+'" text-anchor="middle" fill="currentColor" font-size="11" font-weight="700">'+d.toLocaleDateString('sv-SE',{day:'numeric',month:'short'})+'</text>';
     }
     const spotColors=document.body.classList.contains('dark-mode')
       ? {SE1:'#e21d2b',SE2:'#5bb7e3',SE3:'#63b56d',SE4:'#e9bd45'}
       : {SE1:'#e21d2b',SE2:'#004b6e',SE3:'#4f9f55',SE4:'#e5ac00'};
-    const lineColor=kind==='spot'?(spotColors[area]||'#4f9f55'):'#004b6e';
-    chart.innerHTML=grid+xGrid+'<path d="'+path+'" fill="none" stroke="'+lineColor+'" stroke-width="2.5" stroke-linejoin="miter" stroke-linecap="butt" vector-effect="non-scaling-stroke"/>'+labels;
+    let paths='';
+    if(kind==='spot'){
+      const ordered=vals.slice().sort((a,b)=>a.start-b.start);let path='';
+      ordered.forEach((p,i)=>{const a=x(p.start),b=x(Number.isFinite(p.end)&&p.end>p.start?p.end:p.start+15*60*1000),yy=y(p.v);if(i===0)path+='M '+a.toFixed(2)+' '+yy.toFixed(2);else path+=' L '+a.toFixed(2)+' '+y(ordered[i-1].v).toFixed(2)+' L '+a.toFixed(2)+' '+yy.toFixed(2);path+=' L '+b.toFixed(2)+' '+yy.toFixed(2);});
+      paths='<path d="'+path+'" fill="none" stroke="'+(spotColors[area]||'#4f9f55')+'" stroke-width="2.5" stroke-linejoin="miter" stroke-linecap="butt" vector-effect="non-scaling-stroke"/>';
+    }else{
+      const defs=[['up','Upp','#f2b705'],['down','Ned','#20a84f'],['imbalance','Obalanspris','#e21d2b']];
+      for(const [key,name,color] of defs){
+        const pts=vals.filter(p=>Number.isFinite(p[key])).sort((a,b)=>a.start-b.start);
+        if(!pts.length)continue;
+        let path='M '+x(pts[0].start).toFixed(2)+' '+y(pts[0][key]).toFixed(2);
+        for(let i=0;i<pts.length;i++){
+          const p=pts[i],next=pts[i+1],endX=x(Math.min(next?next.start:p.start+900000,maxT));
+          path+=' H '+endX.toFixed(2);
+          if(next)path+=' V '+y(next[key]).toFixed(2);
+        }
+        paths+='<path d="'+path+'" fill="none" stroke="'+color+'" stroke-width="2.5" stroke-linejoin="miter" stroke-linecap="butt" vector-effect="non-scaling-stroke"/>';
+      }
+      const legend=[['Upp','#f2b705'],['Ned','#20a84f'],['Obalanspris','#e21d2b']];
+      let lx=L;
+      for(const [name,color] of legend){const width=name==='Obalanspris'?148:90;paths+='<line x1="'+lx+'" y1="'+(H-10)+'" x2="'+(lx+22)+'" y2="'+(H-10)+'" stroke="'+color+'" stroke-width="3"/><text x="'+(lx+29)+'" y="'+(H-6)+'" fill="currentColor" opacity=".85" font-size="13">'+name+'</text>';lx+=width;}
+    }
+    chart.innerHTML=grid+xGrid+paths+labels;
   }
   overlay.classList.add('open');overlay.setAttribute('aria-hidden','false');$('kpiDetailClose').focus();
 }
