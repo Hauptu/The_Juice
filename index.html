@@ -513,8 +513,8 @@ body.dark-mode #startupScreen .startup-status{color:#b2beb8}
 
 .dashboard-chrome{
   position:fixed;
-  top:12px;
-  right:12px;
+  top:18px;
+  right:18px;
   z-index:1000;
   display:flex;
   align-items:center;
@@ -536,7 +536,7 @@ body.dark-mode #startupScreen .startup-status{color:#b2beb8}
 body.layout-1x2 .dashboard-chrome .data-health{display:block}
 .settings-wrap{position:relative;display:flex;align-items:center}
 .settings-gear{
-  appearance:none;width:38px;height:38px;display:grid;place-items:center;
+  appearance:none;width:40px;height:40px;display:grid;place-items:center;
   border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.94);
   color:var(--text-dim);font-family:var(--font-body);font-size:20px;line-height:1;
   cursor:pointer;box-shadow:0 6px 18px -12px rgba(37,43,42,.45);backdrop-filter:blur(8px);
@@ -601,7 +601,8 @@ body.layout-1x2 .dashboard-chrome .data-health{display:block}
   color:#fff;
   box-shadow:0 2px 7px rgba(37,43,42,.20);
 }
-.theme-btn{min-width:27px;padding:7px 8px !important;font-size:14px !important;letter-spacing:0 !important}
+ .theme-btn{min-width:34px;padding:7px 9px !important;font-size:17px !important;letter-spacing:0 !important}
+.settings-panel .layout-toggle button{min-width:34px;font-size:17px;padding:7px 9px}
 .toggle-divider{width:1px;height:18px;background:var(--line);opacity:.9}
 
 #app.layout-1x2{
@@ -992,15 +993,15 @@ body.dark-mode #app.layout-1x2 #balance .freq-trace{stroke:#b9c7c1}
       <div class="settings-section">
         <div class="settings-label">Dashboardlayout</div>
         <div class="layout-toggle" aria-label="Dashboardlayout"><div class="layout-options">
-          <button type="button" data-layout="2x2" class="active" aria-pressed="true">2×2</button>
-          <button type="button" data-layout="1x2" aria-pressed="false">1×2</button>
+          <button type="button" data-layout="2x2" class="active" aria-pressed="true" aria-label="Fyra rutor" title="Fyra rutor">▦</button>
+          <button type="button" data-layout="1x2" aria-pressed="false" aria-label="Två rutor" title="Två rutor">▤</button>
         </div></div>
       </div>
       <div class="settings-section">
         <div class="settings-label">Färgtema</div>
         <div class="layout-toggle" aria-label="Färgtema"><div class="theme-options">
-          <button type="button" data-theme="light" class="theme-btn active" aria-label="Ljust läge" aria-pressed="true">☼ Ljust</button>
-          <button type="button" data-theme="dark" class="theme-btn" aria-label="Mörkt läge" aria-pressed="false">☾ Mörkt</button>
+          <button type="button" data-theme="light" class="theme-btn active" aria-label="Ljust läge" title="Ljust läge" aria-pressed="true">☼</button>
+          <button type="button" data-theme="dark" class="theme-btn" aria-label="Mörkt läge" title="Mörkt läge" aria-pressed="false">☾</button>
         </div></div>
       </div>
       <div class="settings-section">
