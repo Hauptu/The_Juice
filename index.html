@@ -2435,7 +2435,11 @@ function openKpiDetail(kind,area){
         labels+='<text x="'+xx+'" y="'+(H-9)+'" text-anchor="middle" fill="currentColor" font-size="11" font-weight="700">'+d.toLocaleDateString('sv-SE',{day:'numeric',month:'short'})+'</text>';
       }
     }
-    chart.innerHTML=grid+xGrid+'<path d="'+path+'" fill="none" stroke="'+(kind==='spot'?'#4f9f55':'#004b6e')+'" stroke-width="2.5" stroke-linejoin="miter" stroke-linecap="butt" vector-effect="non-scaling-stroke"/>'+labels;
+    const spotColors=document.body.classList.contains('dark-mode')
+      ? {SE1:'#e21d2b',SE2:'#5bb7e3',SE3:'#63b56d',SE4:'#e9bd45'}
+      : {SE1:'#e21d2b',SE2:'#004b6e',SE3:'#4f9f55',SE4:'#e5ac00'};
+    const lineColor=kind==='spot'?(spotColors[area]||'#4f9f55'):'#004b6e';
+    chart.innerHTML=grid+xGrid+'<path d="'+path+'" fill="none" stroke="'+lineColor+'" stroke-width="2.5" stroke-linejoin="miter" stroke-linecap="butt" vector-effect="non-scaling-stroke"/>'+labels;
   }
   overlay.classList.add('open');overlay.setAttribute('aria-hidden','false');$('kpiDetailClose').focus();
 }
