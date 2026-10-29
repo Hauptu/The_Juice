@@ -2282,7 +2282,35 @@ async function frequency(){
 function swedishDateTimeShort(d=new Date()){const days=['Sön.','Mån.','Tis.','Ons.','Tor.','Fre.','Lör.'];const months=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];const dd=String(d.getDate()).padStart(2,'0');return `${days[d.getDay()]} ${dd} ${months[d.getMonth()]}`}
 function clock(){const d=new Date();$('clockDate').textContent=swedishDateTimeShort(d);const parts=d.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit',second:'2-digit'}).split(':');$('clockMain').innerHTML=`${parts[0]}<span class="clock-colon"><button class="clock-colon-trigger" type="button" aria-label="Visa pengaregn" title="Psst…"></button><span class="clock-colon-dot"></span></span>${parts[1]}<span class="clock-colon"><span class="clock-colon-dot"></span><span class="clock-colon-dot"></span></span>${parts[2]}`}
 function euroBillSvg(denom,color,accent){
-  return `<svg viewBox="0 0 160 82" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="billbg${denom}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${color}"/><stop offset="1" stop-color="${accent}"/></linearGradient></defs><rect x="2" y="2" width="156" height="78" rx="6" fill="url(#billbg${denom})" stroke="#fff" stroke-opacity=".82" stroke-width="2"/><rect x="8" y="8" width="144" height="66" rx="3" fill="none" stroke="#fff" stroke-opacity=".58" stroke-width="1.5"/><path d="M10 62 Q42 8 76 62 T150 18 M10 20 Q48 74 88 20 T150 60" fill="none" stroke="#fff" stroke-opacity=".22" stroke-width="2"/><circle cx="80" cy="41" r="25" fill="none" stroke="#fff" stroke-opacity=".48" stroke-width="1.5"/><circle cx="80" cy="41" r="19" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="1"/><text x="80" y="49" text-anchor="middle" font-family="Georgia,serif" font-size="27" font-weight="700" fill="#fff" stroke="${color}" stroke-width=".5">${denom}€</text><g fill="#fff" fill-opacity=".9"><path d="M20 18l2.2 4.5 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.5 5-.7z"/><path d="M136 49l1.6 3.2 3.6.5-2.6 2.5.6 3.6-3.2-1.7-3.2 1.7.6-3.6-2.6-2.5 3.6-.5z"/></g><text x="18" y="69" font-family="Arial,sans-serif" font-size="6" letter-spacing="1.2" fill="#fff" fill-opacity=".8">THE JUICE • EURO</text></svg>`;
+  const billColors={5:{base:'#b8b9b7',deep:'#777c80'},10:{base:'#e4a1a0',deep:'#a83c50'},20:{base:'#9bbde2',deep:'#3d679d'},50:{base:'#edb47e',deep:'#b35d35'},100:{base:'#9bc5a1',deep:'#3e8065'},200:{base:'#e8d28a',deep:'#a67d31'}};
+  const p=billColors[Number(denom)]||{base:color,deep:accent};
+  const id='bill'+denom;
+  return `<svg viewBox="0 0 200 96" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <defs>
+    <linearGradient id="${id}bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${p.base}"/><stop offset=".52" stop-color="${color}"/><stop offset="1" stop-color="${p.deep}"/></linearGradient>
+    <linearGradient id="${id}foil" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f8f0c5" stop-opacity=".8"/><stop offset=".35" stop-color="#b4d9d5" stop-opacity=".58"/><stop offset=".7" stop-color="#e8b5d0" stop-opacity=".7"/><stop offset="1" stop-color="#f5e4a1" stop-opacity=".75"/></linearGradient>
+    <pattern id="${id}lines" width="7" height="7" patternUnits="userSpaceOnUse"><path d="M0 7L7 0M-2 2L2-2M5 9L9 5" stroke="#fff" stroke-opacity=".17" stroke-width=".65"/></pattern>
+  </defs>
+  <rect x="2" y="2" width="196" height="92" rx="5" fill="${p.deep}" stroke="#fff" stroke-opacity=".85" stroke-width="1.5"/>
+  <rect x="5" y="5" width="190" height="86" rx="3" fill="url(#${id}bg)"/>
+  <rect x="5" y="5" width="190" height="86" rx="3" fill="url(#${id}lines)"/>
+  <rect x="10" y="10" width="180" height="76" rx="2" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width=".8"/>
+  <path d="M16 72V26Q16 20 22 20H48V72M152 20H178Q184 20 184 26V72H152Z" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="1.2"/>
+  <path d="M19 68V29H45V68M155 68V29H181V68" fill="none" stroke="${p.deep}" stroke-opacity=".8" stroke-width="2"/>
+  <path d="M22 65V33L32 25L42 33V65M158 65V33L168 25L178 33V65" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width=".8"/>
+  <g transform="translate(100 48)">
+    <circle r="31" fill="none" stroke="#fff" stroke-opacity=".62" stroke-width=".7"/>
+    <circle r="27" fill="none" stroke="#fff" stroke-opacity=".48" stroke-width=".6" stroke-dasharray="1.5 2"/>
+    <circle r="22" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width=".7"/>
+    <path d="M-19 8Q-9 -13 0 -1T19 -8M-18 -7Q-5 13 7 2T18 10" fill="none" stroke="#fff" stroke-opacity=".38" stroke-width="1"/>
+    <text y="7" text-anchor="middle" font-family="Georgia,serif" font-size="27" font-weight="700" fill="#fff" stroke="${p.deep}" stroke-width=".55">${denom}</text>
+  </g>
+  <path d="M57 16L73 16L81 80L65 80Z" fill="url(#${id}foil)" opacity=".68" stroke="#fff" stroke-opacity=".7" stroke-width=".5"/>
+  <g fill="#fff" fill-opacity=".92"><path d="M31 13l2 4 4 .6-3 2.8.7 4.1-3.7-2-3.7 2 .7-4.1-3-2.8 4-.6z"/><path d="M170 70l1.5 3 3.3.5-2.4 2.3.6 3.3-3-1.6-3 1.6.6-3.3-2.4-2.3 3.3-.5z"/></g>
+  <text x="15" y="83" font-family="Arial,sans-serif" font-size="5.8" letter-spacing="1" fill="#fff" fill-opacity=".9">THE JUICE</text>
+  <text x="185" y="17" text-anchor="end" font-family="Georgia,serif" font-size="8" fill="#fff" fill-opacity=".95">EURO</text>
+  <text x="185" y="83" text-anchor="end" font-family="Georgia,serif" font-size="7" fill="#fff" fill-opacity=".85">€ ${denom}</text>
+  </svg>`;
 }
 function startMoneyRain(){
   if(document.querySelector('.money-rain'))return;
