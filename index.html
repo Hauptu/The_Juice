@@ -998,7 +998,8 @@ body.dark-mode #app.layout-1x2 #balance .freq-trace{stroke:#b9c7c1}
     <div class="kpi-detail-table-wrap"><table class="kpi-detail-table" id="kpiDetailTable"><thead></thead><tbody></tbody></table></div>
   </section>
 </div>
-\n<div id="startupScreen" aria-label="The Juice startar">
+
+<div id="startupScreen" aria-label="The Juice startar">
   <video class="startup-video" autoplay muted loop playsinline preload="auto" aria-hidden="true">
     <source src="assets/videos/Firefly_Veo_Bring world and energy system to 477116 N2L.mp4" type="video/mp4">
   </video>
@@ -2416,7 +2417,7 @@ $('kpiDetailClose')?.addEventListener('click',closeKpiDetail);
 $('kpiDetailOverlay')?.addEventListener('click',e=>{if(e.target===$('kpiDetailOverlay'))closeKpiDetail();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('kpiDetailOverlay')?.classList.contains('open'))closeKpiDetail();});
 $('kpiDetailCopy')?.addEventListener('click',async()=>{if(!kpiDetailClipboard)return;try{await navigator.clipboard.writeText(kpiDetailClipboard);$('kpiDetailCopy').textContent='Kopierad';setTimeout(()=>{$('kpiDetailCopy').textContent='Kopiera tabell';},1200);}catch(e){const ta=document.createElement('textarea');ta.value=kpiDetailClipboard;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();}});
-\n
+
 </script>
 </body>
 </html>
