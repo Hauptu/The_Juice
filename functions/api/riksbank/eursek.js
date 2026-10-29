@@ -3,7 +3,7 @@ export async function onRequestGet({ request }) {
     status,
     headers: {
       "content-type": "application/json; charset=utf-8",
-      "cache-control": "public, max-age=300, s-maxage=86400",
+      "cache-control": "public, max-age=300, s-maxage=21600",
       ...extraHeaders
     }
   });
@@ -17,9 +17,8 @@ export async function onRequestGet({ request }) {
   if (cached) return cached;
 
   try {
-    const upstream = await fetch("https://api.riksbank.se/swea/v1/Observations/Latest/sekeurpm i".replace(" ", ""), {
+    const upstream = await fetch("https://api.riksbank.se/swea/v1/Observations/Latest/sekeurpmi, {
       headers: { "accept": "application/json" },
-      cf: { cacheTtl: 86400, cacheEverything: true }
     });
     if (!upstream.ok) throw new Error("Riksbanken HTTP " + upstream.status);
     const payload = await upstream.json();
@@ -57,7 +56,7 @@ export async function onRequestGet({ request }) {
       fetchedAt: new Date().toISOString()
     });
     response.headers.set("cache-control", "public, max-age=300, s-maxage=86400");
-    await cache.put(cacheKey, response.clone(), { expirationTtl: 86400 });
+    await cache.put(cacheKey, response.clone(), { expirationTtl: 21600 });
     return response;
   } catch (error) {
     return json({
