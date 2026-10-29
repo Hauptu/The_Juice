@@ -3,7 +3,7 @@ export async function onRequestGet({ request }) {
     status,
     headers: {
       "content-type": "application/json; charset=utf-8",
-      "cache-control": "public, max-age=300, s-maxage=900",
+      "cache-control": "public, max-age=300, s-maxage=300",
       ...extraHeaders
     }
   });
