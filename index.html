@@ -1543,7 +1543,7 @@ function rollingPriceChart(){
   const yStep=niceStep(scaleMax-scaleMin);
   const yMin=Math.floor(scaleMin/yStep)*yStep;
   const yMax=Math.ceil(scaleMax/yStep)*yStep;
-  const w=760,h=250,pl=48,pr=12,pt=10,pb=32,plotW=w-pl-pr,plotH=h-pt-pb;
+  const w=760,h=250,pl=68,pr=12,pt=10,pb=32,plotW=w-pl-pr,plotH=h-pt-pb;
   const x=t=>pl+(t-windowStart)/(end-windowStart)*plotW;
   const y=v=>pt+(yMax-v)/(yMax-yMin)*plotH;
   const yTicks=[];for(let v=yMin;v<=yMax+0.000001;v+=yStep)yTicks.push(v);
@@ -1853,7 +1853,7 @@ function imbalanceMatch(a,b){
 }
 
 function mfrrSvg(rows,area){
-  const now=new Date(), q=new Date(Math.floor(now.getTime()/900000)*900000), end=q.getTime(), start=new Date(q.getFullYear(),q.getMonth(),q.getDate()).getTime(), w=860,h=300,pl=52,pr=18,pt=12,pb=40;
+  const now=new Date(), q=new Date(Math.floor(now.getTime()/900000)*900000), end=q.getTime(), start=new Date(q.getFullYear(),q.getMonth(),q.getDate()).getTime(), w=860,h=300,pl=74,pr=18,pt=12,pb=40;
   const factor=displayCurrency==='SEK'&&eurSekRate?eurSekRate:1;
   const rr=rows.filter(r=>r.a===area&&r.t.getTime()>=start&&r.t.getTime()<=end).map(r=>({...r,up:Number.isFinite(r.up)?r.up*factor:r.up,down:Number.isFinite(r.down)?r.down*factor:r.down})); if(!rr.length)return '<div class="muted small">Ingen publicerade mFRR-utfall för '+mfrrAreaNames[area]+' i tidsfönstret ännu.</div>';
   const ir=imbalanceRowsCache.filter(r=>r.a===area&&r.t.getTime()>=start&&r.t.getTime()<=end).map(r=>({...r,imbalance:r.imbalance*factor}));
@@ -1940,7 +1940,7 @@ function attachmFRRHover(){
     .sort((a,b)=>a.t-b.t);
   if(!rr.length)return;
 
-  const W=860,H=300,pl=52,pr=18,pt=12,pb=40;
+  const W=860,H=300,pl=74,pr=18,pt=12,pb=40;
   const plotW=W-pl-pr;
   const vals=rr.flatMap(r=>[r.up,r.down]).filter(Number.isFinite);
   const lo=Math.min(0,...vals),hi=Math.max(100,...vals),raw=(hi-lo)/4;
