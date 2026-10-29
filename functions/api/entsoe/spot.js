@@ -37,14 +37,14 @@ export async function onRequestGet({ env }) {
       return match ? match[1].trim() : "";
     };
 
-    const reason = xmlText.match(/<(?:[\\w.-]+:)?Reason\\b[^>]*>([\\s\\S]*?)<\\/(?:[\\w.-]+:)?Reason\\s*>/i);
+    const reason = xmlText.match(/<(?:[\w.-]+:)?Reason\b[^>]*>([\s\S]*?)<\/(?:[\w.-]+:)?Reason\s*>/i);
     if (reason) {
       const message = readTag(reason[1], "text");
       throw Error(message || "ENTSO-E returnerade ett API-fel.");
     }
 
     const rows = [];
-    const periods = xmlText.matchAll(/<(?:[\\w.-]+:)?Period\\b[^>]*>([\\s\\S]*?)<\\/(?:[\\w.-]+:)?Period\\s*>/gi);
+    const periods = xmlText.matchAll(/<(?:[\w.-]+:)?Period\b[^>]*>([\s\S]*?)<\/(?:[\w.-]+:)?Period\s*>/gi);
     for (const periodMatch of periods) {
       const period = periodMatch[1];
       const interval = readTag(period, "timeInterval");
@@ -60,7 +60,7 @@ export async function onRequestGet({ env }) {
       })[resolution];
       if (!stepMs) throw Error("Okänd upplösning från ENTSO-E: " + resolution);
 
-      const points = period.matchAll(/<(?:[\\w.-]+:)?Point\\b[^>]*>([\\s\\S]*?)<\\/(?:[\\w.-]+:)?Point\\s*>/gi);
+      const points = period.matchAll(/<(?:[\w.-]+:)?Point\b[^>]*>([\s\S]*?)<\/(?:[\w.-]+:)?Point\s*>/gi);
       for (const pointMatch of points) {
         const point = pointMatch[1];
         const position = Number(readTag(point, "position"));
