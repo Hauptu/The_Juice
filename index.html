@@ -226,6 +226,7 @@ h2{display:block;margin:0;font-family:var(--font-display);font-size:16px;font-we
 .money-rain{position:fixed;inset:0;z-index:9999;overflow:hidden;pointer-events:none}
 .money-rain-item{position:absolute;top:-14vh;width:clamp(48px,5.4vw,82px);height:auto;will-change:transform;animation:money-fall var(--fall-duration,5.5s) linear var(--fall-delay,0s) forwards;filter:drop-shadow(0 3px 3px rgba(0,0,0,.18))}
 .money-rain-item svg{display:block;width:100%;height:auto;overflow:visible}
+.money-rain-item.money-emoji{width:auto;height:auto;font-size:clamp(36px,4.2vw,64px);line-height:1;filter:drop-shadow(0 3px 3px rgba(0,0,0,.18));}
 @keyframes money-fall{0%{transform:translate3d(0,-10vh,0) rotate(0deg);opacity:0}7%{opacity:1}94%{opacity:1}100%{transform:translate3d(var(--drift,30px),115vh,0) rotate(var(--spin,540deg));opacity:0}}
 @media(prefers-reduced-motion:reduce){.money-rain-item{animation-duration:4s!important}}
 
@@ -2281,44 +2282,12 @@ async function frequency(){
 
 function swedishDateTimeShort(d=new Date()){const days=['Sön.','Mån.','Tis.','Ons.','Tor.','Fre.','Lör.'];const months=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];const dd=String(d.getDate()).padStart(2,'0');return `${days[d.getDay()]} ${dd} ${months[d.getMonth()]}`}
 function clock(){const d=new Date();$('clockDate').textContent=swedishDateTimeShort(d);const parts=d.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit',second:'2-digit'}).split(':');$('clockMain').innerHTML=`${parts[0]}<span class="clock-colon"><button class="clock-colon-trigger" type="button" aria-label="Visa pengaregn" title="Psst…"></button><span class="clock-colon-dot"></span></span>${parts[1]}<span class="clock-colon"><span class="clock-colon-dot"></span><span class="clock-colon-dot"></span></span>${parts[2]}`}
-function euroBillSvg(denom,color,accent){
-  const billColors={10:{base:'#e9a09b',deep:'#a93642'},20:{base:'#a8c8e8',deep:'#356b9f'},50:{base:'#f0bd86',deep:'#bd672f'}};
-  const p=billColors[Number(denom)]||{base:'#a8c8e8',deep:'#356b9f'};
-  const id='bill'+denom;
-  return `<svg viewBox="0 0 200 96" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-  <defs>
-    <linearGradient id="${id}bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${p.base}"/><stop offset=".52" stop-color="${p.base}"/><stop offset="1" stop-color="${p.deep}"/></linearGradient>
-    <linearGradient id="${id}foil" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f8f0c5" stop-opacity=".8"/><stop offset=".35" stop-color="#b4d9d5" stop-opacity=".58"/><stop offset=".7" stop-color="#e8b5d0" stop-opacity=".7"/><stop offset="1" stop-color="#f5e4a1" stop-opacity=".75"/></linearGradient>
-    <pattern id="${id}lines" width="7" height="7" patternUnits="userSpaceOnUse"><path d="M0 7L7 0M-2 2L2-2M5 9L9 5" stroke="#fff" stroke-opacity=".17" stroke-width=".65"/></pattern>
-  </defs>
-  <rect x="2" y="2" width="196" height="92" rx="5" fill="${p.deep}" stroke="#fff" stroke-opacity=".85" stroke-width="1.5"/>
-  <rect x="5" y="5" width="190" height="86" rx="3" fill="url(#${id}bg)"/>
-  <rect x="5" y="5" width="190" height="86" rx="3" fill="url(#${id}lines)"/>
-  <rect x="10" y="10" width="180" height="76" rx="2" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width=".8"/>
-  <path d="M16 72V26Q16 20 22 20H48V72M152 20H178Q184 20 184 26V72H152Z" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="1.2"/>
-  <path d="M19 68V29H45V68M155 68V29H181V68" fill="none" stroke="${p.deep}" stroke-opacity=".8" stroke-width="2"/>
-  <path d="M22 65V33L32 25L42 33V65M158 65V33L168 25L178 33V65" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width=".8"/>
-  <g transform="translate(100 48)">
-    <circle r="31" fill="none" stroke="#fff" stroke-opacity=".62" stroke-width=".7"/>
-    <circle r="27" fill="none" stroke="#fff" stroke-opacity=".48" stroke-width=".6" stroke-dasharray="1.5 2"/>
-    <circle r="22" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width=".7"/>
-    <path d="M-19 8Q-9 -13 0 -1T19 -8M-18 -7Q-5 13 7 2T18 10" fill="none" stroke="#fff" stroke-opacity=".38" stroke-width="1"/>
-    <text y="7" text-anchor="middle" font-family="Georgia,serif" font-size="27" font-weight="700" fill="#fff" stroke="${p.deep}" stroke-width=".55">${denom}</text>
-  </g>
-  <path d="M57 16L73 16L81 80L65 80Z" fill="url(#${id}foil)" opacity=".68" stroke="#fff" stroke-opacity=".7" stroke-width=".5"/>
-  <g fill="#fff" fill-opacity=".92"><path d="M31 13l2 4 4 .6-3 2.8.7 4.1-3.7-2-3.7 2 .7-4.1-3-2.8 4-.6z"/><path d="M170 70l1.5 3 3.3.5-2.4 2.3.6 3.3-3-1.6-3 1.6.6-3.3-2.4-2.3 3.3-.5z"/></g>
-  <text x="15" y="83" font-family="Arial,sans-serif" font-size="5.8" letter-spacing="1" fill="#fff" fill-opacity=".9">THE JUICE</text>
-  <text x="185" y="17" text-anchor="end" font-family="Georgia,serif" font-size="8" fill="#fff" fill-opacity=".95">EURO</text>
-  <text x="185" y="83" text-anchor="end" font-family="Georgia,serif" font-size="7" fill="#fff" fill-opacity=".85">€ ${denom}</text>
-  </svg>`;
-}
 function startMoneyRain(){
   if(document.querySelector('.money-rain'))return;
   const layer=document.createElement('div');layer.className='money-rain';layer.setAttribute('aria-hidden','true');document.body.appendChild(layer);
-  const bills=[['10','#e9a09b','#a93642'],['20','#a8c8e8','#356b9f'],['50','#f0bd86','#bd672f']];
+  const moneySymbols=['💶','💶','💶','🪙'];
   for(let i=0;i<76;i++){
-    const [denom,color,accent]=bills[Math.floor(Math.random()*bills.length)];
-    const item=document.createElement('span');item.className='money-rain-item';item.innerHTML=euroBillSvg(denom,color,accent);
+    const item=document.createElement('span');item.className='money-rain-item money-emoji';item.textContent=moneySymbols[Math.floor(Math.random()*moneySymbols.length)];
     item.style.left=(Math.random()*98)+'%';item.style.setProperty('--fall-duration',(5+Math.random()*3)+'s');item.style.setProperty('--fall-delay',(Math.random()*1.15)+'s');item.style.setProperty('--drift',((Math.random()-.5)*260)+'px');item.style.setProperty('--spin',((Math.random()>.5?1:-1)*(220+Math.random()*720))+'deg');layer.appendChild(item);
   }
   window.setTimeout(()=>layer.remove(),10000);
