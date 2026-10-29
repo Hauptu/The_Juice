@@ -217,6 +217,15 @@ h2{display:block;margin:0;font-family:var(--font-display);font-size:16px;font-we
 .clock-display{text-align:center}
 .clock-date{font-family:var(--font-display);font-size:19px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--text-dim)}
 .clock-time{font-family:var(--font-display);font-size:76px;font-weight:600;line-height:1.05;letter-spacing:.005em;color:var(--text);margin-top:12px}
+.clock-colon{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;vertical-align:middle;gap:.12em;width:.22em;height:.72em;margin:0 .015em;transform:translateY(-.015em)}
+.clock-colon-dot{display:block;width:.09em;height:.09em;border-radius:50%;background:currentColor;flex:0 0 auto}
+.clock-colon-trigger{appearance:none;border:0;padding:0;margin:0;background:transparent;cursor:pointer;display:block;width:.22em;height:.22em;position:relative;flex:0 0 auto;border-radius:50%}
+.clock-colon-trigger::after{content:"";position:absolute;inset:-.16em;border-radius:50%}
+.clock-colon-trigger:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.money-rain{position:fixed;inset:0;z-index:9999;overflow:hidden;pointer-events:none}
+.money-rain-item{position:absolute;top:-12vh;will-change:transform;animation:money-fall var(--fall-duration,4s) linear var(--fall-delay,0s) forwards;font-size:clamp(22px,3vw,42px);filter:drop-shadow(0 3px 3px rgba(0,0,0,.18))}
+@keyframes money-fall{0%{transform:translate3d(0,-10vh,0) rotate(0deg);opacity:0}8%{opacity:1}92%{opacity:1}100%{transform:translate3d(var(--drift,30px),115vh,0) rotate(var(--spin,540deg));opacity:0}}
+@media(prefers-reduced-motion:reduce){.money-rain-item{animation-duration:2.5s!important}}
 
 /* ---------- ruta 4 · frequency ---------- */
 .freq-reading{display:flex;align-items:baseline;gap:8px}
@@ -2269,7 +2278,18 @@ async function frequency(){
 }
 
 function swedishDateTimeShort(d=new Date()){const days=['Sön.','Mån.','Tis.','Ons.','Tor.','Fre.','Lör.'];const months=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];const dd=String(d.getDate()).padStart(2,'0');return `${days[d.getDay()]} ${dd} ${months[d.getMonth()]}`}
-function clock(){const d=new Date();$('clockDate').textContent=swedishDateTimeShort(d);$('clockMain').textContent=d.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}
+function clock(){const d=new Date();$('clockDate').textContent=swedishDateTimeShort(d);const parts=d.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit',second:'2-digit'}).split(':');$('clockMain').innerHTML=`${parts[0]}<span class="clock-colon"><button class="clock-colon-trigger" type="button" aria-label="Visa pengaregn" title="Psst…"><span class="clock-colon-dot"></span></button><span class="clock-colon-dot"></span></span>${parts[1]}<span class="clock-colon"><span class="clock-colon-dot"></span><span class="clock-colon-dot"></span></span>${parts[2]}`}
+function startMoneyRain(){
+  if(document.querySelector('.money-rain'))return;
+  const layer=document.createElement('div');layer.className='money-rain';layer.setAttribute('aria-hidden','true');document.body.appendChild(layer);
+  const money=['💸','💵','💶','🤑','💰'];
+  for(let i=0;i<64;i++){
+    const item=document.createElement('span');item.className='money-rain-item';item.textContent=money[Math.floor(Math.random()*money.length)];
+    item.style.left=(Math.random()*100)+'%';item.style.setProperty('--fall-duration',(3.2+Math.random()*2.6)+'s');item.style.setProperty('--fall-delay',(Math.random()*.9)+'s');item.style.setProperty('--drift',((Math.random()-.5)*240)+'px');item.style.setProperty('--spin',((Math.random()>.5?1:-1)*(180+Math.random()*720))+'deg');layer.appendChild(item);
+  }
+  window.setTimeout(()=>layer.remove(),7500);
+}
+$('clockMain').addEventListener('click',e=>{if(e.target.closest('.clock-colon-trigger'))startMoneyRain()});
 initStartupScreen();
 const sekButtonInit=currencyButtons.find(b=>b.dataset.currency==='SEK');if(sekButtonInit)sekButtonInit.disabled=!eurSekRate;
 setDashboardCurrency(displayCurrency,false);
