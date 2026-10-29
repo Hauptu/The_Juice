@@ -2424,15 +2424,16 @@ function openKpiDetail(kind,area){
     for(let v=yMin;v<=yMax+yStep*.001;v+=yStep){const yy=y(v);grid+='<line x1="'+L+'" y1="'+yy+'" x2="'+(W-R)+'" y2="'+yy+'" stroke="currentColor" stroke-opacity="'+(Math.abs(v)<1e-8?'.24':'.13')+'"/><text x="'+(L-12)+'" y="'+(yy+4)+'" text-anchor="end" fill="currentColor" opacity=".78" font-size="12">'+fmtAxis(v)+'</text>';}
     const totalHours=(maxT-minT)/3600000;
     const tickHours=totalHours<=10?1:totalHours<=22?2:totalHours<=48?4:totalHours<=100?6:12;
-    const tickMs=tickHours*3600000,firstTick=Math.ceil(minT/tickMs)*tickMs;
+    const tickMs=tickHours*3600000;
+    const firstDate=new Date(minT),firstTick=new Date(firstDate.getFullYear(),firstDate.getMonth(),firstDate.getDate()).getTime();
     let xGrid='',labels='';
     for(let t=firstTick;t<=maxT;t+=tickMs){
+      if(t<minT)continue;
       const xx=x(t);if(xx<L||xx>W-R)continue;
       xGrid+='<line x1="'+xx+'" y1="'+T+'" x2="'+xx+'" y2="'+(T+plotH)+'" stroke="currentColor" stroke-opacity=".07"/>';
       const d=new Date(t),timeLabel=d.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});
       labels+='<text x="'+xx+'" y="'+(H-47)+'" text-anchor="middle" fill="currentColor" opacity=".78" font-size="12">'+timeLabel+'</text>';
-      const prev=new Date(t-tickMs),dateChanged=d.getDate()!==prev.getDate()||d.getMonth()!==prev.getMonth()||d.getFullYear()!==prev.getFullYear();
-      if(dateChanged||t===firstTick)labels+='<text x="'+xx+'" y="'+(H-29)+'" text-anchor="middle" fill="currentColor" font-size="11" font-weight="700">'+d.toLocaleDateString('sv-SE',{day:'numeric',month:'short'})+'</text>';
+      if(d.getHours()===0&&d.getMinutes()===0)labels+='<text x="'+xx+'" y="'+(H-29)+'" text-anchor="middle" fill="currentColor" font-size="11" font-weight="700">'+d.toLocaleDateString('sv-SE',{day:'numeric',month:'short'})+'</text>';
     }
     const spotColors=document.body.classList.contains('dark-mode')
       ? {SE1:'#e21d2b',SE2:'#5bb7e3',SE3:'#63b56d',SE4:'#e9bd45'}
