@@ -2393,7 +2393,7 @@ function openKpiDetail(kind,area){
     series=rows.filter(r=>Number.isFinite(r.up)).map(r=>({start:r.time.getTime(),end:r.time.getTime(),v:r.up}));
   }
   title.textContent=label;
-  subtitle.textContent=rows.length+' datapunkter · befintlig data · ingen extra hämtning';
+  subtitle.textContent='';
   const fmtTime=v=>{const d=new Date(v);return Number.isNaN(d.getTime())?'—':d.toLocaleString('sv-SE',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});};
   const fmtCell=(key,v)=>v==null||!Number.isFinite(Number(v))&&key!=='start'&&key!=='end'&&key!=='time'?'—':(['start','end','time'].includes(key)?fmtTime(v):Number(v).toLocaleString('sv-SE',{maximumFractionDigits:2,minimumFractionDigits:2}));
   table.querySelector('thead').innerHTML='<tr>'+columns.map(c=>'<th class="'+(['start','end','time'].includes(c[0])?'':'num')+'">'+c[1]+'</th>').join('')+'</tr>';
