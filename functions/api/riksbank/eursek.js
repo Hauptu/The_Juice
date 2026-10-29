@@ -56,7 +56,7 @@ export async function onRequestGet({ request }) {
       fetchedAt: new Date().toISOString()
     });
     response.headers.set("cache-control", "public, max-age=300, s-maxage=86400");
-    await cache.put(cacheKey, response.clone(), { expirationTtl: 21600 });
+    await cache.put(cacheKey, response.clone());
     return response;
   } catch (error) {
     return json({
