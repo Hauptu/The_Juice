@@ -1570,7 +1570,7 @@ function rollingPriceChart(){
     labels+=`<text x="${xx}" y="${h-16}" text-anchor="middle" class="axis">${tm}</text>`;
     if(dateChanged)labels+=`<text x="${xx}" y="${h-4}" text-anchor="middle" class="axis" font-weight="700">${d.toLocaleDateString('sv-SE',{day:'2-digit',month:'short'})}</text>`;
   }
-  const svg=`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><text x="12" y="114" class="axis" font-size="8" fill="#69756f" text-anchor="middle" transform="rotate(-90 12 114)>${currencyUnit()}</text>${grid}${vgrid}${paths}${nowLine}${labels}</svg>`;
+  const svg=`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><text x="12" y="114" class="axis" font-size="8" fill="#69756f" text-anchor="middle" transform="rotate(-90 12 114)">${currencyUnit()}</text>${grid}${vgrid}${paths}${nowLine}${labels}</svg>`;
   const title=$('priceWindowTitle');
   if(title){
     const legend=title.querySelector('.price-inline-legend');
