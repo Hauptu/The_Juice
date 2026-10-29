@@ -31,43 +31,48 @@ export async function onRequestGet({ env }) {
   const periodEnd = stamp(toDate);
 
   function parsePrices(xmlText) {
-    const doc = new DOMParser().parseFromString(xmlText, "application/xml");
-    if (doc.querySelector("parsererror")) throw Error("Ogiltigt XML-svar från ENTSO-E.");
-    const reason = doc.getElementsByTagNameNS("*", "Reason")[0];
+    const readTag = (text, name) => {
+      const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const match = text.match(new RegExp("<(?:[\\w.-]+:)?" + escaped + "\\b[^>]*>([\\s\\S]*?)<\\/(?:[\\w.-]+:)?" + escaped + "\\s*>", "i"));
+      return match ? match[1].trim() : "";
+    };
+
+    const reason = xmlText.match(/<(?:[\\w.-]+:)?Reason\\b[^>]*>([\\s\\S]*?)<\\/(?:[\\w.-]+:)?Reason\\s*>/i);
     if (reason) {
-      const message = reason.getElementsByTagNameNS("*", "text")[0]?.textContent;
+      const message = readTag(reason[1], "text");
       throw Error(message || "ENTSO-E returnerade ett API-fel.");
     }
 
     const rows = [];
-    for (const series of Array.from(doc.getElementsByTagNameNS("*", "TimeSeries"))) {
-      for (const period of Array.from(series.getElementsByTagNameNS("*", "Period"))) {
-        const interval = period.getElementsByTagNameNS("*", "timeInterval")[0];
-        const startText = interval?.getElementsByTagNameNS("*", "start")[0]?.textContent;
-        const periodStartMs = Date.parse(startText || "");
-        if (!Number.isFinite(periodStartMs)) continue;
+    const periods = xmlText.matchAll(/<(?:[\\w.-]+:)?Period\\b[^>]*>([\\s\\S]*?)<\\/(?:[\\w.-]+:)?Period\\s*>/gi);
+    for (const periodMatch of periods) {
+      const period = periodMatch[1];
+      const interval = readTag(period, "timeInterval");
+      const periodStartMs = Date.parse(readTag(interval, "start"));
+      if (!Number.isFinite(periodStartMs)) continue;
 
-        const resolution = period.getElementsByTagNameNS("*", "resolution")[0]?.textContent || "";
-        const stepMs = ({
-          PT15M: 15 * 60 * 1000,
-          PT30M: 30 * 60 * 1000,
-          PT60M: 60 * 60 * 1000,
-          PT1H: 60 * 60 * 1000
-        })[resolution];
-        if (!stepMs) throw Error("Okänd upplösning från ENTSO-E: " + resolution);
+      const resolution = readTag(period, "resolution");
+      const stepMs = ({
+        PT15M: 15 * 60 * 1000,
+        PT30M: 30 * 60 * 1000,
+        PT60M: 60 * 60 * 1000,
+        PT1H: 60 * 60 * 1000
+      })[resolution];
+      if (!stepMs) throw Error("Okänd upplösning från ENTSO-E: " + resolution);
 
-        for (const point of Array.from(period.getElementsByTagNameNS("*", "Point"))) {
-          const position = Number(point.getElementsByTagNameNS("*", "position")[0]?.textContent);
-          const price = Number(point.getElementsByTagNameNS("*", "price.amount")[0]?.textContent);
-          if (!Number.isInteger(position) || position < 1 || !Number.isFinite(price)) continue;
-          const start = new Date(periodStartMs + (position - 1) * stepMs);
-          const end = new Date(start.getTime() + stepMs);
-          rows.push({
-            time_start: start.toISOString(),
-            time_end: end.toISOString(),
-            EUR_per_MWh: price
-          });
-        }
+      const points = period.matchAll(/<(?:[\\w.-]+:)?Point\\b[^>]*>([\\s\\S]*?)<\\/(?:[\\w.-]+:)?Point\\s*>/gi);
+      for (const pointMatch of points) {
+        const point = pointMatch[1];
+        const position = Number(readTag(point, "position"));
+        const price = Number(readTag(point, "price.amount"));
+        if (!Number.isInteger(position) || position < 1 || !Number.isFinite(price)) continue;
+        const start = new Date(periodStartMs + (position - 1) * stepMs);
+        const end = new Date(start.getTime() + stepMs);
+        rows.push({
+          time_start: start.toISOString(),
+          time_end: end.toISOString(),
+          EUR_per_MWh: price
+        });
       }
     }
 
