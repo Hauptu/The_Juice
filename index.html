@@ -976,10 +976,29 @@ body.dark-mode #app.layout-1x2 #balance .freq-trace{stroke:#b9c7c1}
     height:220px;
   }
 }
+
+/* KPI detail overlay: isolated from the dashboard layout. */
+.kpi-detail-overlay{position:fixed;inset:0;z-index:10000;background:rgba(8,14,12,.76);backdrop-filter:blur(5px);display:none;align-items:center;justify-content:center;padding:2vh 2vw}
+.kpi-detail-overlay.open{display:flex}
+.kpi-detail-dialog{width:96vw;height:96vh;max-width:1800px;background:var(--panel-a);color:var(--text);border:1px solid var(--line);border-radius:14px;box-shadow:0 24px 90px rgba(0,0,0,.35);display:flex;flex-direction:column;overflow:hidden}
+.kpi-detail-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 22px;border-bottom:1px solid var(--line);flex-shrink:0}
+.kpi-detail-title{font-size:clamp(18px,2vw,28px);font-weight:800;margin:0}.kpi-detail-subtitle{font-size:12px;color:var(--text-dim);margin-top:4px}
+.kpi-detail-actions{display:flex;gap:8px;align-items:center}.kpi-detail-btn{font:inherit;font-size:12px;font-weight:700;padding:8px 12px;border:1px solid var(--line);border-radius:7px;background:var(--panel-b);color:var(--text);cursor:pointer}.kpi-detail-close{font-size:22px;line-height:1;padding:6px 11px}
+.kpi-detail-chart-wrap{height:48%;min-height:220px;padding:12px 18px;border-bottom:1px solid var(--line);flex-shrink:0}.kpi-detail-chart{width:100%;height:100%;display:block}.kpi-detail-table-wrap{flex:1;min-height:0;overflow:auto;padding:0 18px 14px}.kpi-detail-table{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}.kpi-detail-table th{position:sticky;top:0;background:var(--panel-b);z-index:1;text-align:left;font-weight:800}.kpi-detail-table th,.kpi-detail-table td{padding:8px 10px;border-bottom:1px solid var(--line-soft);white-space:nowrap}.kpi-detail-table td.num,.kpi-detail-table th.num{text-align:right}.kpi-detail-table tr:hover td{background:var(--card-b)}
+#areaCards .card,#system .mfrr-card{cursor:pointer}#areaCards .card:focus-visible,#system .mfrr-card:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+@media(max-width:700px){.kpi-detail-overlay{padding:0}.kpi-detail-dialog{width:100vw;height:100dvh;border-radius:0}.kpi-detail-head{padding:12px}.kpi-detail-chart-wrap{height:40%;min-height:180px;padding:8px}.kpi-detail-table-wrap{padding:0 8px 8px}}
 </style>
 </head>
 <body>
-<div id="startupScreen" aria-label="The Juice startar">
+
+<div class="kpi-detail-overlay" id="kpiDetailOverlay" aria-hidden="true">
+  <section class="kpi-detail-dialog" role="dialog" aria-modal="true" aria-labelledby="kpiDetailTitle">
+    <header class="kpi-detail-head"><div><h2 class="kpi-detail-title" id="kpiDetailTitle">Detaljvy</h2><div class="kpi-detail-subtitle" id="kpiDetailSubtitle">Tillgängliga datapunkter</div></div><div class="kpi-detail-actions"><button class="kpi-detail-btn" id="kpiDetailCopy" type="button">Kopiera tabell</button><button class="kpi-detail-btn kpi-detail-close" id="kpiDetailClose" type="button" aria-label="Stäng detaljvy">×</button></div></header>
+    <div class="kpi-detail-chart-wrap" id="kpiDetailChartWrap"><svg class="kpi-detail-chart" id="kpiDetailChart" viewBox="0 0 1200 320" preserveAspectRatio="none" role="img" aria-label="Tidsserie"></svg></div>
+    <div class="kpi-detail-table-wrap"><table class="kpi-detail-table" id="kpiDetailTable"><thead></thead><tbody></tbody></table></div>
+  </section>
+</div>
+\n<div id="startupScreen" aria-label="The Juice startar">
   <video class="startup-video" autoplay muted loop playsinline preload="auto" aria-hidden="true">
     <source src="assets/videos/Firefly_Veo_Bring world and energy system to 477116 N2L.mp4" type="video/mp4">
   </video>
@@ -1081,7 +1100,56 @@ window.__juiceStartupFailsafe=setTimeout(()=>{
     setTimeout(()=>screen.classList.add('is-hidden'),1000);
   }
 },12000);
-</script>
+
+
+// KPI detail modal: render only from data already held by the dashboard.
+let kpiDetailClipboard='';
+function openKpiDetail(kind,area){
+  const overlay=$('kpiDetailOverlay'),title=$('kpiDetailTitle'),subtitle=$('kpiDetailSubtitle'),table=$('kpiDetailTable'),chart=$('kpiDetailChart');
+  if(!overlay||!table||!chart)return;
+  let rows=[],columns=[],series=[],label='';
+  if(kind==='spot'){
+    label='Day-ahead · '+area;
+    rows=parseEntries(area).map(x=>({start:x.start,end:x.end,price:x.v}));
+    columns=[['start','Från'],['end','Till'],['price','Pris ('+currencyUnit()+')']];
+    series=rows.map(r=>({t:new Date(r.start).getTime(),v:r.price}));
+  }else{
+    label='mFRR EAM · '+area;
+    const mfrr=mfrrRowsCache.filter(r=>r.a===area).map(r=>({t:r.t instanceof Date?r.t:new Date(r.t),up:r.up,down:r.down}));
+    const imbalance=imbalanceRowsCache.filter(r=>r.a===area);
+    const byTime=new Map();
+    for(const r of mfrr){const k=r.t.getTime();byTime.set(k,{time:r.t,up:r.up,down:r.down,imbalance:null});}
+    for(const r of imbalance){const k=r.t.getTime();const z=byTime.get(k)||{time:r.t,up:null,down:null,imbalance:null};z.imbalance=r.imbalance;byTime.set(k,z);}
+    rows=Array.from(byTime.values()).sort((a,b)=>a.time-b.time);
+    columns=[['time','Tid'],['up','Upp ('+currencyUnit()+')'],['down','Ned ('+currencyUnit()+')'],['imbalance','Obalans ('+currencyUnit()+')']];
+    series=rows.filter(r=>Number.isFinite(r.up)).map(r=>({t:r.time.getTime(),v:r.up}));
+  }
+  title.textContent=label;
+  subtitle.textContent=rows.length+' datapunkter · befintlig data · ingen extra hämtning';
+  const fmtTime=v=>{const d=new Date(v);return Number.isNaN(d.getTime())?'—':d.toLocaleString('sv-SE',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});};
+  const fmtCell=(key,v)=>v==null||!Number.isFinite(Number(v))&&key!=='start'&&key!=='end'&&key!=='time'?'—':(['start','end','time'].includes(key)?fmtTime(v):Number(v).toLocaleString('sv-SE',{maximumFractionDigits:2,minimumFractionDigits:2}));
+  table.querySelector('thead').innerHTML='<tr>'+columns.map(c=>'<th class="'+(c[0]==='start'||c[0]==='end'||c[0]==='time'?'':'num')+'">'+c[1]+'</th>').join('')+'</tr>';
+  table.querySelector('tbody').innerHTML=rows.map(r=>'<tr>'+columns.map(c=>'<td class="'+(['start','end','time'].includes(c[0])?'':'num')+'">'+fmtCell(c[0],r[c[0]])+'</td>').join('')+'</tr>').join('');
+  kpiDetailClipboard=[columns.map(c=>c[1]).join('\t'),...rows.map(r=>columns.map(c=>fmtCell(c[0],r[c[0]])).join('\t'))].join('\n');
+  const vals=series.filter(p=>Number.isFinite(p.v));
+  if(!vals.length){chart.innerHTML='<text x="600" y="160" text-anchor="middle" fill="currentColor" font-size="18">Ingen tidsserie tillgänglig i den data som redan hämtats.</text>';}
+  else{
+    const W=1200,H=320,L=68,R=24,T=18,B=36,minT=Math.min(...vals.map(p=>p.t)),maxT=Math.max(...vals.map(p=>p.t)),minV=Math.min(...vals.map(p=>p.v)),maxV=Math.max(...vals.map(p=>p.v)),range=Math.max(1,maxV-minV),x=t=>L+(t-minT)/Math.max(1,maxT-minT)*(W-L-R),y=v=>T+(maxV-v)/range*(H-T-B);
+    const path=vals.map((p,i)=>(i?'L':'M')+x(p.t).toFixed(1)+' '+y(p.v).toFixed(1)).join(' ');
+    const grid=[0,1,2,3,4].map(i=>{const yy=T+i*(H-T-B)/4,v=maxV-i*range/4;return '<line x1="'+L+'" y1="'+yy+'" x2="'+(W-R)+'" y2="'+yy+'" stroke="currentColor" stroke-opacity=".13"/><text x="'+(L-10)+'" y="'+(yy+4)+'" text-anchor="end" fill="currentColor" opacity=".75" font-size="12">'+v.toLocaleString('sv-SE',{maximumFractionDigits:2})+'</text>';}).join('');
+    chart.innerHTML=grid+'<path d="'+path+'" fill="none" stroke="'+(kind==='spot'?'#4f9f55':'#004b6e')+'" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>'+'<text x="'+L+'" y="'+(H-8)+'" fill="currentColor" font-size="12">'+fmtTime(minT)+'</text><text x="'+(W-R)+'" y="'+(H-8)+'" text-anchor="end" fill="currentColor" font-size="12">'+fmtTime(maxT)+'</text>';
+  }
+  overlay.classList.add('open');overlay.setAttribute('aria-hidden','false');$('kpiDetailClose').focus();
+}
+function closeKpiDetail(){const o=$('kpiDetailOverlay');if(o){o.classList.remove('open');o.setAttribute('aria-hidden','true');}}
+$('areaCards')?.addEventListener('click',e=>{const card=e.target.closest('.card');const area=card?.querySelector('.label')?.textContent?.trim();if(A.includes(area))openKpiDetail('spot',area);});
+$('areaCards')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){const card=e.target.closest('.card');const area=card?.querySelector('.label')?.textContent?.trim();if(A.includes(area)){e.preventDefault();openKpiDetail('spot',area);}}});
+document.querySelectorAll('#system .mfrr-card').forEach((card,i)=>{const area=mfrrAreas[i];if(!area)return;card.setAttribute('role','button');card.setAttribute('tabindex','0');card.setAttribute('aria-label','Visa mFRR-detaljer '+area);card.addEventListener('click',()=>openKpiDetail('mfrr',area));card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openKpiDetail('mfrr',area);}});});
+$('kpiDetailClose')?.addEventListener('click',closeKpiDetail);
+$('kpiDetailOverlay')?.addEventListener('click',e=>{if(e.target===$('kpiDetailOverlay'))closeKpiDetail();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('kpiDetailOverlay')?.classList.contains('open'))closeKpiDetail();});
+$('kpiDetailCopy')?.addEventListener('click',async()=>{if(!kpiDetailClipboard)return;try{await navigator.clipboard.writeText(kpiDetailClipboard);$('kpiDetailCopy').textContent='Kopierad';setTimeout(()=>{$('kpiDetailCopy').textContent='Kopiera tabell';},1200);}catch(e){const ta=document.createElement('textarea');ta.value=kpiDetailClipboard;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();}});
+\n</script>
 <script>
 
 
@@ -1703,7 +1771,7 @@ function updateCurrentPriceCards(){
 
 function renderPrices(){
   const cur=getCurrentPriceEntries();
-  $('areaCards').innerHTML=cur.map(o=>`<div class="card"><div class="label">${o.a}</div><div class="price ${o.x?.v<0?'down':'up'}">${o.x?fmt(o.x.v):'—'}<span class="unit">${currencyUnit()}</span></div><div class="time">${o.x?time(o.x.start)+'–'+time(o.x.end):'—'}</div></div>`).join('');
+  $('areaCards').innerHTML=cur.map(o=>`<div class="card" role="button" tabindex="0" aria-label="Visa day-ahead-detaljer ${o.a}"><div class="label">${o.a}</div><div class="price ${o.x?.v<0?'down':'up'}">${o.x?fmt(o.x.v):'—'}<span class="unit">${currencyUnit()}</span></div><div class="time">${o.x?time(o.x.start)+'–'+time(o.x.end):'—'}</div></div>`).join('');
   const priceWindowTitle=$('priceWindowTitle');
   if(priceWindowTitle){
     const hours=fmt0(Math.max(0,Math.round((Math.max(...cur.map(o=>o.e.at(-1)?.end?new Date(o.e.at(-1).end).getTime():0))-Date.now())/3600000)));
