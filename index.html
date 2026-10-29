@@ -2388,10 +2388,17 @@ function openKpiDetail(kind,area){
     const byTime=new Map();
     for(const r of mfrr){const k=r.t.getTime();byTime.set(k,{time:r.t,up:r.up,down:r.down,imbalance:null});}
     for(const r of imbalance){const k=r.t.getTime();const z=byTime.get(k)||{time:r.t,up:null,down:null,imbalance:null};z.imbalance=r.imbalance;byTime.set(k,z);}
-    rows=Array.from(byTime.values()).sort((a,b)=>a.time-b.time);
-    columns=[['time','Tid'],['up','Upp ('+currencyUnit()+')'],['down','Ned ('+currencyUnit()+')'],['imbalance','Obalans ('+currencyUnit()+')']];
     const factor=displayCurrency==='SEK'&&eurSekRate?eurSekRate:1;
-    series=rows.map(r=>({start:r.time.getTime(),end:r.time.getTime()+900000,up:Number.isFinite(r.up)?r.up*factor:null,down:Number.isFinite(r.down)?r.down*factor:null,imbalance:(()=>{const ib=imbalanceAt(area,r.time.getTime());return ib&&Number.isFinite(ib.imbalance)?ib.imbalance*factor:null;})()}));
+    rows=Array.from(byTime.values()).sort((a,b)=>a.time-b.time).map(r=>{
+      const ib=imbalanceAt(area,r.time.getTime());
+      return {...r,
+        up:Number.isFinite(r.up)?r.up*factor:r.up,
+        down:Number.isFinite(r.down)?r.down*factor:r.down,
+        imbalance:ib&&Number.isFinite(ib.imbalance)?ib.imbalance*factor:null
+      };
+    });
+    columns=[['time','Tid'],['up','Upp ('+currencyUnit()+')'],['down','Ned ('+currencyUnit()+')'],['imbalance','Obalans ('+currencyUnit()+')']];
+    series=rows.map(r=>({start:r.time.getTime(),end:r.time.getTime()+900000,up:r.up,down:r.down,imbalance:r.imbalance}));
   }
   title.textContent=label;
   subtitle.textContent='';
