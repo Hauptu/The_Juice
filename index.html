@@ -2411,7 +2411,7 @@ function openKpiDetail(kind,area){
   const vals=kind==='spot'?series.filter(p=>Number.isFinite(p.v)&&Number.isFinite(p.start)):series.filter(p=>Number.isFinite(p.start)&&(Number.isFinite(p.up)||Number.isFinite(p.down)||Number.isFinite(p.imbalance)));
   if(!vals.length){chart.innerHTML='<text x="600" y="160" text-anchor="middle" fill="currentColor" font-size="18">Ingen tidsserie tillgänglig i den data som redan hämtats.</text>';}
   else{
-    const W=1200,H=320,L=76,R=24,T=18,B=kind==='mfrr'?76:54;
+    const W=1200,H=320,L=76,R=24,T=18,B=kind==='mfrr'?88:66;
     const minT=Math.min(...vals.map(p=>p.start)),maxT=Math.max(...vals.map(p=>Number.isFinite(p.end)&&p.end>p.start?p.end:p.start));
     const rawMin=Math.min(...allValues),rawMax=Math.max(...allValues),rawRange=Math.max(1,rawMax-rawMin);
     const pad=kind==='mfrr'?Math.max(rawRange*.08,5):Math.max(rawRange*.08,Math.abs(rawMin)*.03,Math.abs(rawMax)*.03,1);
