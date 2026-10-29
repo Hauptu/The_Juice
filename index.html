@@ -984,7 +984,7 @@ body.dark-mode #app.layout-1x2 #balance .freq-trace{stroke:#b9c7c1}
 .kpi-detail-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 22px;border-bottom:1px solid var(--line);flex-shrink:0}
 .kpi-detail-title{font-size:clamp(18px,2vw,28px);font-weight:800;margin:0}.kpi-detail-subtitle{font-size:12px;color:var(--text-dim);margin-top:4px}
 .kpi-detail-actions{display:flex;gap:8px;align-items:center}.kpi-detail-btn{font:inherit;font-size:12px;font-weight:700;padding:8px 12px;border:1px solid var(--line);border-radius:7px;background:var(--panel-b);color:var(--text);cursor:pointer}.kpi-detail-close{font-size:22px;line-height:1;padding:6px 11px}
-.kpi-detail-chart-wrap{height:48%;min-height:220px;padding:12px 18px;border-bottom:1px solid var(--line);flex-shrink:0}.kpi-detail-chart{width:100%;height:100%;display:block}.kpi-detail-table-wrap{flex:1;min-height:0;overflow:auto;padding:0 18px 14px}.kpi-detail-table{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}.kpi-detail-table th{position:sticky;top:0;background:var(--panel-b);z-index:1;text-align:left;font-weight:800}.kpi-detail-table th,.kpi-detail-table td{padding:8px 10px;border-bottom:1px solid var(--line-soft);white-space:nowrap}.kpi-detail-table td.num,.kpi-detail-table th.num{text-align:right}.kpi-detail-table tr:hover td{background:var(--card-b)}
+.kpi-detail-chart-wrap{height:48%;min-height:220px;padding:12px 18px;border-bottom:1px solid var(--line);flex-shrink:0}.kpi-detail-chart{width:100%;height:100%;display:block}.kpi-detail-table-wrap{flex:1;min-height:0;overflow:auto;padding:0 18px 14px}.kpi-detail-table{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}.kpi-detail-table th{position:sticky;top:0;background:var(--panel-b);z-index:1;text-align:left;font-weight:800}.kpi-detail-table th,.kpi-detail-table td{padding:8px 10px;border-bottom:1px solid var(--line-soft);white-space:nowrap}.kpi-detail-table td.num,.kpi-detail-table th.num{text-align:right}.kpi-detail-table tr:hover td{background:var(--card-b)}.kpi-detail-table tr.future-row td{background:rgba(79,159,85,.075)}.kpi-detail-table tr.future-row td:first-child{border-left:3px solid #4f9f55;padding-left:7px}.kpi-detail-table tr.future-row:hover td{background:rgba(79,159,85,.13)}
 #areaCards .card,#system .mfrr-card{cursor:pointer}#areaCards .card:focus-visible,#system .mfrr-card:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 @media(max-width:700px){.kpi-detail-overlay{padding:0}.kpi-detail-dialog{width:100vw;height:100dvh;border-radius:0}.kpi-detail-head{padding:12px}.kpi-detail-chart-wrap{height:40%;min-height:180px;padding:8px}.kpi-detail-table-wrap{padding:0 8px 8px}}
 </style>
@@ -2405,7 +2405,11 @@ function openKpiDetail(kind,area){
   const fmtTime=v=>{const d=new Date(v);return Number.isNaN(d.getTime())?'—':d.toLocaleString('sv-SE',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});};
   const fmtCell=(key,v)=>v==null||!Number.isFinite(Number(v))&&key!=='start'&&key!=='end'&&key!=='time'?'—':(['start','end','time'].includes(key)?fmtTime(v):Number(v).toLocaleString('sv-SE',{maximumFractionDigits:2,minimumFractionDigits:2}));
   table.querySelector('thead').innerHTML='<tr>'+columns.map(c=>'<th class="'+(['start','end','time'].includes(c[0])?'':'num')+'">'+c[1]+'</th>').join('')+'</tr>';
-  table.querySelector('tbody').innerHTML=rows.map(r=>'<tr>'+columns.map(c=>'<td class="'+(['start','end','time'].includes(c[0])?'':'num')+'">'+fmtCell(c[0],r[c[0]])+'</td>').join('')+'</tr>').join('');
+  const nowMs=Date.now();
+  table.querySelector('tbody').innerHTML=rows.map(r=>{
+    const future=kind==='spot'&&new Date(r.start).getTime()>=nowMs;
+    return '<tr'+(future?' class="future-row" title="Framtida pris"':'')+'>'+columns.map(c=>'<td class="'+(['start','end','time'].includes(c[0])?'':'num')+'">'+fmtCell(c[0],r[c[0]])+'</td>').join('')+'</tr>';
+  }).join('');
   kpiDetailClipboard=[columns.map(c=>c[1]).join('\t'),...rows.map(r=>columns.map(c=>fmtCell(c[0],r[c[0]])).join('\t'))].join('\n');
   const allValues=kind==='spot'?series.map(p=>p.v).filter(Number.isFinite):series.flatMap(p=>[p.up,p.down,p.imbalance]).filter(Number.isFinite);
   const vals=kind==='spot'?series.filter(p=>Number.isFinite(p.v)&&Number.isFinite(p.start)):series.filter(p=>Number.isFinite(p.start)&&(Number.isFinite(p.up)||Number.isFinite(p.down)||Number.isFinite(p.imbalance)));
@@ -2460,7 +2464,14 @@ function openKpiDetail(kind,area){
       let lx=L;
       for(const [name,color] of legend){const width=name==='Obalanspris'?148:90;paths+='<line x1="'+lx+'" y1="'+(H-10)+'" x2="'+(lx+22)+'" y2="'+(H-10)+'" stroke="'+color+'" stroke-width="3"/><text x="'+(lx+29)+'" y="'+(H-6)+'" fill="currentColor" opacity=".85" font-size="13">'+name+'</text>';lx+=width;}
     }
-    chart.innerHTML=grid+xGrid+paths+labels;
+    let futureShade='';
+    let nowMarker='';
+    if(kind==='spot'&&nowMs>minT&&nowMs<maxT){
+      const nowX=x(nowMs),futureWidth=Math.max(0,W-R-nowX);
+      futureShade='<rect x="'+nowX+'" y="'+T+'" width="'+futureWidth+'" height="'+plotH+'" fill="#4f9f55" fill-opacity=".09"/>';
+      nowMarker='<line x1="'+nowX+'" y1="'+T+'" x2="'+nowX+'" y2="'+(T+plotH)+'" stroke="#4f9f55" stroke-width="1.5" stroke-dasharray="5 4"/><text x="'+(nowX+5)+'" y="'+(T+12)+'" fill="#4f9f55" font-size="12" font-weight="800">NU</text>';
+    }
+    chart.innerHTML=grid+futureShade+xGrid+paths+nowMarker+labels;
   }
   overlay.classList.add('open');overlay.setAttribute('aria-hidden','false');$('kpiDetailClose').focus();
 }
