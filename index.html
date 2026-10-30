@@ -2345,21 +2345,23 @@ const sekButtonInit=currencyButtons.find(b=>b.dataset.currency==='SEK');if(sekBu
 setDashboardCurrency(displayCurrency,false);
 fetchExchangeRate();scheduleExchangeRateRefresh();
 clock();setInterval(clock,1000);
-async function runManualSync(button,fn,defaultLabel){
+async function runManualSync(button,fn,defaultLabel,key){
   if(!button||button.disabled)return;
+  const previousSync=state.sync[key]||0;
   button.disabled=true;button.textContent='Hämtar…';button.classList.remove('is-done');
   try{
     await fn();
-    button.textContent='Klart';
-    button.classList.add('is-done');
-    window.setTimeout(()=>{button.textContent=defaultLabel;button.classList.remove('is-done');button.disabled=false;},1800);
+    const succeeded=(state.sync[key]||0)>previousSync;
+    button.textContent=succeeded?'Klart':'Ingen ny data';
+    if(succeeded)button.classList.add('is-done');
+    window.setTimeout(()=>{button.textContent=defaultLabel;button.classList.remove('is-done');button.disabled=false;},2200);
   }catch(e){
     button.textContent='Misslyckades';
     window.setTimeout(()=>{button.textContent=defaultLabel;button.disabled=false;},2500);
   }
 }
-$('manualSpotSync')?.addEventListener('click',()=>runManualSync($('manualSpotSync'),prices,'Hämta Day-ahead'));
-$('manualMfrrSync')?.addEventListener('click',()=>runManualSync($('manualMfrrSync'),mfrr,'Hämta mFRR'));
+$('manualSpotSync')?.addEventListener('click',()=>runManualSync($('manualSpotSync'),prices,'Hämta Day-ahead','market'));
+$('manualMfrrSync')?.addEventListener('click',()=>runManualSync($('manualMfrrSync'),mfrr,'Hämta mFRR','system'));
 prices();mfrr();frequency();
 schedulePriceQuarterUpdate();
 setInterval(prices,900000);
