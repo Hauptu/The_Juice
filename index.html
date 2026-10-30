@@ -579,6 +579,16 @@ body.layout-1x2 .dashboard-chrome .data-health{display:block}
 .currency-options button.active{background:var(--wind);color:var(--panel-a);border-color:var(--wind)}
 .currency-options button:disabled{opacity:.45;cursor:not-allowed}
 .currency-status{font-size:9px;line-height:1.4;color:var(--text-faint)}
+.manual-sync-actions{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.manual-sync-btn{
+  appearance:none;border:1px solid var(--line);border-radius:8px;padding:9px 8px;
+  background:var(--card-b);color:var(--text);font:700 10px var(--font-body);cursor:pointer;
+  transition:background .15s,border-color .15s,opacity .15s;
+}
+.manual-sync-btn:hover{background:var(--card-a);border-color:var(--text-dim)}
+.manual-sync-btn:disabled{opacity:.55;cursor:wait}
+.manual-sync-btn.is-done{border-color:var(--green)}
+
 .layout-toggle{
   position:relative;
   top:auto;
@@ -1039,6 +1049,14 @@ body.dark-mode #app.layout-1x2 #balance .freq-trace{stroke:#b9c7c1}
           <button type="button" data-theme="light" class="theme-btn active" aria-label="Ljust läge" title="Ljust läge" aria-pressed="true">☼</button>
           <button type="button" data-theme="dark" class="theme-btn" aria-label="Mörkt läge" title="Mörkt läge" aria-pressed="false">☾</button>
         </div></div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-label">Manuell datahämtning</div>
+        <div class="manual-sync-actions">
+          <button type="button" class="manual-sync-btn" id="manualSpotSync">Hämta Day-ahead</button>
+          <button type="button" class="manual-sync-btn" id="manualMfrrSync">Hämta mFRR</button>
+        </div>
+        <div class="currency-status">Startar en ny hämtning för SE1–SE4. mFRR-knappen hämtar både A84 och A85.</div>
       </div>
       <div class="settings-section">
         <div class="settings-label">Spotprisets visningsvaluta</div>
@@ -2326,7 +2344,23 @@ initStartupScreen();
 const sekButtonInit=currencyButtons.find(b=>b.dataset.currency==='SEK');if(sekButtonInit)sekButtonInit.disabled=!eurSekRate;
 setDashboardCurrency(displayCurrency,false);
 fetchExchangeRate();scheduleExchangeRateRefresh();
-clock();setInterval(clock,1000);prices();mfrr();frequency();
+clock();setInterval(clock,1000);
+async function runManualSync(button,fn,defaultLabel){
+  if(!button||button.disabled)return;
+  button.disabled=true;button.textContent='Hämtar…';button.classList.remove('is-done');
+  try{
+    await fn();
+    button.textContent='Klart';
+    button.classList.add('is-done');
+    window.setTimeout(()=>{button.textContent=defaultLabel;button.classList.remove('is-done');button.disabled=false;},1800);
+  }catch(e){
+    button.textContent='Misslyckades';
+    window.setTimeout(()=>{button.textContent=defaultLabel;button.disabled=false;},2500);
+  }
+}
+$('manualSpotSync')?.addEventListener('click',()=>runManualSync($('manualSpotSync'),prices,'Hämta Day-ahead'));
+$('manualMfrrSync')?.addEventListener('click',()=>runManualSync($('manualMfrrSync'),mfrr,'Hämta mFRR'));
+prices();mfrr();frequency();
 schedulePriceQuarterUpdate();
 setInterval(prices,900000);
 setInterval(mfrr,300000);
