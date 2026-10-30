@@ -2176,12 +2176,18 @@ async function mfrr(){
           }
     const successfulAreas=[...new Set(rows.map(r=>r.a))];
     const oldByArea=new Map();
-    for(const r of mfrrRowsCache) oldByArea.set(r.a+'|'+r.t.getTime(),r);
-    for(const area of successfulAreas){
-      for(const key of [...oldByArea.keys()]) if(key.startsWith(area+'|')) oldByArea.delete(key);
+    for(const r of mfrrRowsCache) oldByArea.set(r.a+'|'+r.t.getTime(),{...r});
+    // Komplettera befintliga tidsrader i stället för att radera ett helt område
+    // när ENTSO-E bara returnerar delar av dess data.
+    for(const r of rows){
+      const key=r.a+'|'+r.t.getTime();
+      const previous=oldByArea.get(key)||{t:r.t,a:r.a,up:null,down:null};
+      if(Number.isFinite(r.up)) previous.up=r.up;
+      if(Number.isFinite(r.down)) previous.down=r.down;
+      oldByArea.set(key,previous);
     }
-    for(const r of rows) oldByArea.set(r.a+'|'+r.t.getTime(),r);
     mfrrRowsCache=Array.from(oldByArea.values()).sort((a,b)=>a.t-b.t);
+    const missingAreas=mfrrAreas.filter(area=>!successfulAreas.includes(area));
     for(const a of mfrrAreas){
       const c=mfrrRowsCache.filter(r=>r.a===a && (Number.isFinite(r.up)||Number.isFinite(r.down))).sort((x,y)=>y.t-x.t);
       if(c.length && (!mfrrAreaLatest[a] || c[0].t.getTime()>mfrrAreaLatest[a].t.getTime())) mfrrAreaLatest[a]=c[0];
@@ -2189,7 +2195,19 @@ async function mfrr(){
     rendermFRRArea();
     markSync('system','systemUpdated','Synkad');
     systemFailCount=0;
-    status('systemStatus',payload.cached?'LIVE · CACHE':'LIVE','ok',payload.cached?'Visar senast lyckade ENTSO-E-data medan ny hämtning väntar eller delvis misslyckades.':'Senast lyckad ENTSO-E-hämtning.');
+    if(missingAreas.length){
+      window.mfrrPartialRetryCount=(window.mfrrPartialRetryCount||0)+1;
+      status('systemStatus','LIVE · KOMPLETTERAR','stale',`Saknar data för ${missingAreas.join(', ')}. Försöker komplettera automatiskt.`);
+      if(window.mfrrPartialRetryCount<=3 && !window.mfrrPartialRetryTimer){
+        window.mfrrPartialRetryTimer=window.setTimeout(()=>{
+          window.mfrrPartialRetryTimer=null;
+          mfrr();
+        },15000);
+      }
+    }else{
+      window.mfrrPartialRetryCount=0;
+      status('systemStatus',payload.cached?'LIVE · CACHE':'LIVE','ok',payload.cached?'Visar senast lyckade ENTSO-E-data medan ny hämtning väntar.':'Senast lyckad ENTSO-E-hämtning.');
+    }
   }catch(e){
     console.warn('ENTSO-E mFRR:',e);
     if(!mfrrRowsCache.length && !window.mfrrStartupRetry){
