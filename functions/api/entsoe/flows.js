@@ -54,7 +54,7 @@ export async function onRequestGet({request,env}) {
   const periodStart=utcStamp(start), periodEnd=utcStamp(end);
   const results = await Promise.all(BORDERS.map(async ([from,to])=>{
     const params = new URLSearchParams({
-      securityToken:token, documentType:"A11",
+      securityToken:token, documentType:"A11", processType:"A16",
       out_Domain:AREAS[from], in_Domain:AREAS[to],
       periodStart, periodEnd
     });
