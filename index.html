@@ -2230,7 +2230,8 @@ async function mfrr(){
       status('systemStatus','LIVE · CACHE','stale',`Senaste lyckade EAM-data visas. Hämtning misslyckades (${systemFailCount}): ${msg}. Nytt försök planerat.`);
     }else{
       const tokenMissing=msg.startsWith('ENTSO-E-token');
-      status('systemStatus',tokenMissing?'TOKEN SAKNAS':'FÖRSÖKER IGEN',tokenMissing?'err':'stale',msg+(window.mfrrRequestRetryCount<=3?' · nytt försök om 15 sekunder':' · automatiska extraförsök uttömda, nytt ordinarie försök om 5 minuter'));
+      const retryInfo=window.mfrrRequestRetryCount<=3?'Nytt automatiskt försök om 15 sekunder.': 'Automatiska extraförsök uttömda. Nästa ordinarie försök om 5 minuter.';
+      status('systemStatus',tokenMissing?'TOKEN SAKNAS':'Hämtar…',tokenMissing?'err':'loading',msg+' · '+retryInfo);
     }
   }finally{window.mfrrBusy=false;}
 }
