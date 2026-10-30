@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The Juice – Power Flows prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;--bg:#101715;--panel:#17211e;--panel2:#1b2824;--line:#2c3b35;--text:#edf3ef;--muted:#91a39a;--green:#63d69a;--blue:#70b8ed;--orange:#f0a45b;--red:#ef7f79}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -20%,#263b32 0%,var(--bg) 55%);color:var(--text);font-family:Inter,Arial,sans-serif;min-height:100vh;padding:28px}
+.shell{max-width:1500px;margin:auto}.top{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:22px}.eyebrow{font-size:11px;letter-spacing:.16em;color:var(--green);font-weight:800;text-transform:uppercase}.title{font:700 clamp(27px,3vw,42px) 'Space Grotesk';margin:5px 0}.sub{color:var(--muted);font-size:13px}.live{border:1px solid #355443;background:#183126;color:var(--green);padding:9px 13px;border-radius:30px;font-size:11px;font-weight:800;letter-spacing:.08em;white-space:nowrap}.live:before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:8px;box-shadow:0 0 12px var(--green)}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}.metric,.map-card,.list-card{background:linear-gradient(145deg,#1a2621,#141e1a);border:1px solid var(--line);border-radius:14px}.metric{padding:16px 18px}.metric label{display:block;color:var(--muted);font-size:10px;letter-spacing:.12em;font-weight:800;text-transform:uppercase}.metric strong{display:block;font:600 27px 'Space Grotesk';margin-top:6px}.metric small{color:var(--muted);font-size:11px}
+.content{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(300px,.8fr);gap:14px}.map-card{padding:18px;min-height:600px}.card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.card-head h2{font:600 16px 'Space Grotesk';margin:0}.tag{color:var(--muted);font-size:10px;border:1px solid var(--line);padding:6px 9px;border-radius:20px}
+.map{width:100%;height:auto;display:block;max-height:560px}.zone{fill:#24362f;stroke:#547064;stroke-width:1.5}.zone-label{fill:#e9f3ed;font:700 15px Inter;text-anchor:middle}.country{fill:#75877e;font:600 12px Inter;text-anchor:middle;letter-spacing:1px}.borderline{stroke:#50645a;stroke-width:2;stroke-dasharray:5 6;fill:none}.flow{stroke:var(--green);stroke-width:4;fill:none;stroke-linecap:round;opacity:.95}.flow.dim{stroke:#78958a;opacity:.55}.flow-label{fill:#dce9e1;font:700 11px Inter;text-anchor:middle;paint-order:stroke;stroke:#17211e;stroke-width:5px;stroke-linejoin:round}.node{fill:#8bd7ad;stroke:#17211e;stroke-width:3}.empty{stroke:#66776e;stroke-dasharray:4 5;opacity:.45}
+.side{display:flex;flex-direction:column;gap:14px}.list-card{padding:17px}.list-card h3{font:600 14px 'Space Grotesk';margin:0 0 14px}.flow-row{display:grid;grid-template-columns:1fr auto;gap:10px;padding:11px 0;border-bottom:1px solid #2b3933}.flow-row:last-child{border:0}.route{font-size:12px;font-weight:700}.route small{display:block;color:var(--muted);font-size:10px;font-weight:500;margin-top:4px}.value{font:600 14px 'Space Grotesk';text-align:right}.value small{display:block;color:var(--muted);font:500 9px Inter;margin-top:3px}.legend{display:flex;gap:16px;flex-wrap:wrap;color:var(--muted);font-size:10px;margin-top:15px}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}.foot{display:flex;justify-content:space-between;gap:15px;color:var(--muted);font-size:10px;margin-top:14px;line-height:1.5}.error{color:var(--orange)}@media(max-width:850px){body{padding:16px}.content{grid-template-columns:1fr}.map-card{min-height:0}.metrics{gap:8px}.metric{padding:12px}.metric strong{font-size:21px}}@media(max-width:520px){.top{align-items:flex-start;flex-direction:column}.metrics{grid-template-columns:1fr}.map-card{padding:12px}.map{min-height:300px}}
+</style></head><body><main class="shell">
+<header class="top"><div><div class="eyebrow">THE JUICE / EXPERIMENTAL MODULE</div><h1 class="title">Power flows</h1><div class="sub">Fysiska elflöden mellan svenska elområden och våra grannländer</div></div><div class="live" id="status">ANSLUTER</div></header>
+<section class="metrics"><article class="metric"><label>Svensk export</label><strong id="export">— MW</strong><small>Summerade flöden ut från Sverige</small></article><article class="metric"><label>Svensk import</label><strong id="import">— MW</strong><small>Summerade flöden in till Sverige</small></article><article class="metric"><label>Senaste mätvärde</label><strong id="latest">—</strong><small id="stamp">Väntar på ENTSO-E</small></article></section>
+<section class="content"><article class="map-card"><div class="card-head"><h2>Nordiskt flöde</h2><span class="tag">FYSISKA FLÖDEN · MW</span></div>
+<svg class="map" viewBox="0 0 850 610" role="img" aria-label="Schematisk karta över elområden och förbindelser">
+<defs><marker id="arr" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6" fill="none" stroke="#63d69a" stroke-width="1.2"/></marker></defs>
+<path class="zone" d="M390 35 L490 55 525 125 490 200 455 265 420 330 385 390 340 350 355 270 365 190 350 115Z"/><path class="zone" d="M510 185 L560 195 585 255 570 330 530 385 490 350 485 275Z"/><path class="zone" d="M345 390 L430 390 465 435 445 495 380 510 335 465Z"/><path class="zone" d="M310 500 L470 500 500 545 455 575 330 565 285 535Z"/>
+<path class="zone" d="M210 80 L270 90 300 180 280 290 250 400 205 455 170 390 180 270 185 160Z" opacity=".7"/><path class="zone" d="M590 85 L700 105 730 200 700 300 630 320 590 255 610 170Z" opacity=".7"/>
+<text class="country" x="420" y="18">NORGE</text><text class="country" x="660" y="72">FINLAND</text><text class="country" x="390" y="600">DANMARK / KONTINENTEN</text>
+<text class="zone-label" x="420" y="150">SE1</text><text class="zone-label" x="535" y="265">SE2</text><text class="zone-label" x="400" y="455">SE3</text><text class="zone-label" x="390" y="540">SE4</text>
+<text class="zone-label" x="230" y="265">NO</text><text class="zone-label" x="660" y="210">FI</text>
+<g id="flowLines"><path class="flow dim" d="M470 150 Q560 100 625 170"/><path class="flow dim" d="M475 260 Q350 220 270 250"/><path class="flow dim" d="M435 450 Q300 420 250 350"/><path class="flow dim" d="M430 535 Q530 570 610 530"/></g>
+<g id="flowLabels"></g></svg>
+<div class="legend"><span><i class="dot" style="background:var(--green)"></i>Flöde från Sverige</span><span><i class="dot" style="background:var(--blue)"></i>Flöde till Sverige</span><span><i class="dot" style="background:#66776e"></i>Ingen aktuell datapunkt</span></div></article>
+<aside class="side"><article class="list-card"><h3>Förbindelser · senaste värde</h3><div id="flows"><div class="flow-row"><div class="route">Hämtar flöden…</div><div class="value">—</div></div></div></article><article class="list-card"><h3>Om datan</h3><div class="sub">Källa: ENTSO-E Transparency Platform, A11 Physical Flows. Mätvärden i MW. Publicering sker normalt nära realtid, senast H+1 efter driftperioden.</div><div class="foot"><span id="count">0 av 15 förbindelser</span><span id="refresh">Uppdateras var 60:e sekund</span></div></article></aside></section>
+<div class="foot"><span>PROTOTYP – påverkar inte den publika The Juice-versionen.</span><span id="updated">Senast uppdaterad: —</span></div>
+</main>
+<script>
+const $=id=>document.getElementById(id),fmt=n=>Math.round(n).toLocaleString('sv-SE');
+async function load(){
+ try{
+  const r=await fetch('/api/entsoe/flows');if(!r.ok)throw Error('HTTP '+r.status);const d=await r.json();
+  const ok=d.flows.filter(x=>x.status==='ok');
+  $('status').textContent=ok.length?'LIVE · '+ok.length+'/'+d.total:'DATA SAKNAS';
+  $('count').textContent=ok.length+' av '+d.total+' förbindelser';
+  const swedish=x=>x.from.startsWith('SE')!==x.to.startsWith('SE');
+  const out=ok.filter(x=>x.from.startsWith('SE')&&!x.to.startsWith('SE')).reduce((s,x)=>s+x.mw,0);
+  const inn=ok.filter(x=>!x.from.startsWith('SE')&&x.to.startsWith('SE')).reduce((s,x)=>s+x.mw,0);
+  $('export').textContent=fmt(Math.max(0,out))+' MW';$('import').textContent=fmt(Math.max(0,inn))+' MW';
+  const latest=ok.reduce((a,b)=>!a||b.time>a.time?b:a,null);
+  $('latest').textContent=latest?new Date(latest.time).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'})+' UTC':'—';
+  $('stamp').textContent=latest?'Senaste datapunkt i flödesdatan':'Inväntar datapunkter';
+  $('flows').innerHTML=d.flows.map(x=>'<div class="flow-row"><div class="route">'+x.from+' → '+x.to+'<small>'+(x.status==='ok'?new Date(x.time).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'})+' UTC':x.status==='empty'?'Ingen publicerad datapunkt':'Tillfälligt fel')+'</small></div><div class="value">'+(x.status==='ok'?fmt(x.mw)+' MW':'—')+'<small>'+(x.status==='ok'?'A11':'')+'</small></div></div>').join('');
+  $('updated').textContent='Hämtad: '+new Date(d.updatedAt).toLocaleString('sv-SE');
+  $('flowLines').innerHTML='';$('flowLabels').innerHTML='';
+  const paths=[['SE1','FI','M470 150 Q560 100 625 170',545,125],['SE2','NO4','M475 260 Q350 220 270 250',365,225],['SE3','NO1','M435 450 Q300 420 250 350',335,390],['SE4','DK1','M430 535 Q530 570 610 530',520,560]];
+  for(const [a,b,path,x,y] of paths){
+   const f=d.flows.find(v=>v.from===a&&v.to===b||v.from===b&&v.to===a);
+   if(!f||f.status!=='ok')continue;
+   const positive=f.mw>=0,fromSweden=(f.from.startsWith('SE')&&positive)||(f.to.startsWith('SE')&&!positive);
+   const color=fromSweden?'#63d69a':'#70b8ed';
+   $('flowLines').insertAdjacentHTML('beforeend','<path d="'+path+'" stroke="'+color+'" stroke-width="'+Math.max(2,Math.min(8,2+Math.abs(f.mw)/1000))+'" fill="none" stroke-linecap="round" marker-end="url(#arr)"/>');
+   $('flowLabels').insertAdjacentHTML('beforeend','<text class="flow-label" x="'+x+'" y="'+y+'">'+fmt(Math.abs(f.mw))+' MW</text>');
+  }
+ }catch(e){$('status').textContent='API-FEL';$('flows').innerHTML='<div class="error">Kunde inte hämta flöden: '+e.message+'</div>'}
+}
+load();setInterval(load,60000);
+</script></body></html>
