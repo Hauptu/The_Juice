@@ -2104,11 +2104,17 @@ async function mfrr(){
     });
     if(!r.ok){
       let detail='';
-      try{const e=await r.json();detail=e?.error||JSON.stringify(e?.areas||e)||''}catch{}
+      try{
+        const e=await r.json();
+        detail=e?.error||'';
+        if(e?.areas)detail+=(detail?' ':'')+Object.entries(e.areas).map(([a,v])=>a+': '+v).join(', ');
+      }catch{}
       throw Error('ENTSO-E proxy HTTP '+r.status+(detail?' · '+detail:''));
     }
     const payload=await r.json();
     if(!payload || !payload.data) throw Error('ogiltigt svar från ENTSO-E-proxy');
+    window.mfrrRequestRetryCount=0;
+    if(window.mfrrRequestRetryTimer){clearTimeout(window.mfrrRequestRetryTimer);window.mfrrRequestRetryTimer=null;}
     if(payload.errors) console.warn('[mFRR] Delvisa ENTSO-E-fel:',payload.errors);
     if(payload.imbalanceErrors) console.warn('[Obalanspris] Delvisa ENTSO-E A85-fel:',payload.imbalanceErrors);
     const imbalanceParts=[];
@@ -2210,17 +2216,21 @@ async function mfrr(){
     }
   }catch(e){
     console.warn('ENTSO-E mFRR:',e);
-    if(!mfrrRowsCache.length && !window.mfrrStartupRetry){
-      window.mfrrStartupRetry=true;
-      setTimeout(()=>{ window.mfrrStartupRetry=false; mfrr(); },15000);
-    }
     const msg=String(e?.message||e);
     systemFailCount++;
+    window.mfrrRequestRetryCount=(window.mfrrRequestRetryCount||0)+1;
+    if(window.mfrrRequestRetryCount<=3 && !window.mfrrRequestRetryTimer){
+      window.mfrrRequestRetryTimer=window.setTimeout(()=>{
+        window.mfrrRequestRetryTimer=null;
+        mfrr();
+      },15000);
+    }
     if(mfrrRowsCache.length){
       rendermFRRArea();
-      status('systemStatus','LIVE · CACHE','stale',`Senaste lyckade EAM-data visas. Försök ${systemFailCount} misslyckades.`);
+      status('systemStatus','LIVE · CACHE','stale',`Senaste lyckade EAM-data visas. Hämtning misslyckades (${systemFailCount}): ${msg}. Nytt försök planerat.`);
     }else{
-      status('systemStatus',msg.startsWith('ENTSO-E-token')?'TOKEN SAKNAS':'HÄMTAR…',msg.startsWith('ENTSO-E-token')?'err':'loading',msg);
+      const tokenMissing=msg.startsWith('ENTSO-E-token');
+      status('systemStatus',tokenMissing?'TOKEN SAKNAS':'FÖRSÖKER IGEN',tokenMissing?'err':'stale',msg+(window.mfrrRequestRetryCount<=3?' · nytt försök om 15 sekunder':' · automatiska extraförsök uttömda, nytt ordinarie försök om 5 minuter'));
     }
   }finally{window.mfrrBusy=false;}
 }
